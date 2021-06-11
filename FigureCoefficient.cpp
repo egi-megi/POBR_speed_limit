@@ -78,6 +78,11 @@ void FigureCoefficient::addColor(int color, int i) {
     colors[i] = color;
 }
 
+void FigureCoefficient::setColors(int colorsA[]) {
+    for (int i = 0; i < 6; i++)
+        colors[i] = colorsA[i];
+}
+
 float FigureCoefficient::getAngle() const {
     return angle;
 }

@@ -47,6 +47,24 @@ cv::Mat selectMax(cv::Mat &I) {
     return res;
 }
 
+cv::Mat makeWhiteBoard(cv::Mat &I) {
+    CV_Assert(I.depth() != sizeof(uchar));
+    cv::Mat res(I.rows, I.cols, CV_8UC3);
+    switch (I.channels()) {
+        case 3:
+            cv::Mat_<cv::Vec3b> _R = res;
+            for (int i = 0; i < I.rows; ++i)
+                for (int j = 0; j < I.cols; ++j) {
+                    _R(i, j)[0] = 255;
+                    _R(i, j)[1] = 255;
+                    _R(i, j)[2] = 255;
+                }
+            res = _R;
+            break;
+    }
+    return res;
+}
+
 bool computeBordersOfColor(cv::Mat_<cv::Vec3b> &_I, FigureCoefficient *figureCoefficient, int i, int j) {
 
             int b_min = figureCoefficient->getColors()[0];
@@ -56,9 +74,9 @@ bool computeBordersOfColor(cv::Mat_<cv::Vec3b> &_I, FigureCoefficient *figureCoe
             int g_max = figureCoefficient->getColors()[4];
             int r_max = figureCoefficient->getColors()[5];
 
-            bool condition = _I(i, j)[0] != b_min  && _I(i, j)[1] != g_min && _I(i, j)[2] != r_min;
-            bool condition1 = (_I(i, j)[0] > b_min &&  _I(i, j)[0] > b_max) &&
-                    (_I(i, j)[1] < g_min && _I(i, j)[1] > g_max) && (_I(i, j)[2] < r_min && _I(i, j)[2] > r_max);
+            //bool condition = _I(i, j)[0] != b_min  && _I(i, j)[1] != g_min && _I(i, j)[2] != r_min;
+            bool condition = (_I(i, j)[0] >= b_min &&  _I(i, j)[0] <= b_max) &&
+                    (_I(i, j)[1] >= g_min && _I(i, j)[1] <= g_max) && (_I(i, j)[2] >= r_min && _I(i, j)[2] <= r_max);
     return condition;
 }
 
@@ -83,8 +101,8 @@ void computeBox(cv::Mat &I, FigureCoefficient *figureCoefficient) {
             while (computeBordersOfColor(_I, figureCoefficient, i, j) && i < I.rows) {
                 j = 0;
                 while (computeBordersOfColor(_I, figureCoefficient, i, j) && j < I.cols) {
-                    coorUpX = j;
-                    coorUpY = i;
+                    coorDownX = j;
+                    coorDownY = i;
                     ++j;
                 }
                 ++i;
@@ -124,24 +142,28 @@ void computeBox(cv::Mat &I, FigureCoefficient *figureCoefficient) {
                 --i;
                 j = I.cols - 1;
                 while (computeBordersOfColor(_I, figureCoefficient, i, j) && j >= 0 ) {
-                    coorDownX = j;
-                    coorDownY = i;
+                    coorUpX = j;
+                    coorUpY = i;
                     j--;
                 }
             }
 
-            figureCoefficient->addPixel(coorLeftX - 2, 0);
-            figureCoefficient->addPixel(coorUpY - 2, 1);
-            figureCoefficient->addPixel(coorRightX + 4, 2);
-            figureCoefficient->addPixel(coorDownY + 4, 3);
+            figureCoefficient->addPixel(coorLeftX, 0);
+            figureCoefficient->addPixel(coorUpY, 1);
+            figureCoefficient->addPixel(coorRightX, 2);
+            figureCoefficient->addPixel(coorDownY, 3);
+            std::cout << "coorLeftX = " << coorLeftX << ", coorRightX = " << coorRightX
+                    << ", coorUpY = " << coorUpY << ", coorDownY = " << coorDownY<< std::endl;
+            std::cout << "Width = " << figureCoefficient->getPixels()[2] - figureCoefficient->getPixels()[0] << "Hight = " << figureCoefficient->getPixels()[3]
+                                                                                 - figureCoefficient->getPixels()[1] << std::endl;
     }
 }
 
 void computeField(FigureCoefficient *figureCoefficient, cv::Mat &I) {
     int field = 0;
-    int b = figureCoefficient->getColors()[0];
-    int g = figureCoefficient->getColors()[1];
-    int r = figureCoefficient->getColors()[2];
+    //int b = figureCoefficient->getColors()[0];
+    //int g = figureCoefficient->getColors()[1];
+    //int r = figureCoefficient->getColors()[2];
     CV_Assert(I.depth() != sizeof(uchar));
     cv::Mat res(I.rows, I.cols, CV_8UC3);
     switch (I.channels()) {
@@ -149,15 +171,58 @@ void computeField(FigureCoefficient *figureCoefficient, cv::Mat &I) {
             cv::Mat_<cv::Vec3b> _I = I;
             for (int j = figureCoefficient->getPixels()[0]; j <= figureCoefficient->getPixels()[2]; ++j) {
                 for (int i = figureCoefficient->getPixels()[1]; i <= figureCoefficient->getPixels()[3]; ++i) {
-                    if (_I(i, j)[0] <= b && _I(i, j)[1] <= g && _I(i, j)[2] <= r) {
+                    if (computeBordersOfColor(_I, figureCoefficient, i, j)) {
                         field = field + 1;
-                        //_I(i, j)[0] = 255;
+                        _I(i, j)[0] = 255;
+                        _I(i, j)[1] = 255;
+                        _I(i, j)[2] = 255;
                     }
                 }
             }
     }
     figureCoefficient->setField(field);
     std::cout <<  ": S = " << figureCoefficient->getField();
+}
+
+void findNeighborhood(FigureCoefficient *figureCoefficientMain, FigureCoefficient *figureCoefficientNeighbors, cv::Mat &I, cv::Mat whiteBoard, int sizeOfNeighborhood) {
+    CV_Assert(I.depth() != sizeof(uchar));
+    cv::Mat res(I.rows, I.cols, CV_8UC3);
+    switch (I.channels()) {
+        case 3:
+            cv::Mat_<cv::Vec3b> _I = I;
+            cv::Mat_<cv::Vec3b> _R = whiteBoard;
+            for (int j = figureCoefficientMain->getPixels()[0] - sizeOfNeighborhood; j <= figureCoefficientMain->getPixels()[2] + sizeOfNeighborhood; ++j) {
+                for (int i = figureCoefficientMain->getPixels()[1] - sizeOfNeighborhood; i <= figureCoefficientMain->getPixels()[3] + sizeOfNeighborhood; ++i) {
+                    if (computeBordersOfColor(_I, figureCoefficientMain, j, i)) {
+                        for (int k = j - sizeOfNeighborhood; k <= j + sizeOfNeighborhood; k++) {
+                            for (int l = i - sizeOfNeighborhood; l <= i + sizeOfNeighborhood; l++) {
+                                if (computeBordersOfColor(_I, figureCoefficientNeighbors, k, l)) {
+                                    _R(i, j)[0] = 0;
+                                    _R(i, j)[1] = 0;
+                                    _R(i, j)[2] = 0;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+    }
+}
+
+void cutNoise(FigureCoefficient *figureCoefficientMain, FigureCoefficient *figureCoefficientNeighbors, cv::Mat &I, cv::Mat whiteBoard, int sizeOfNeighborhood) {
+    CV_Assert(I.depth() != sizeof(uchar));
+    cv::Mat res(I.rows, I.cols, CV_8UC3);
+    FigureCoefficient figureCoefficientBlack;
+    int colorsBlack [6] = {0, 0, 0, 5, 5, 5}; //czarny
+    figureCoefficientBlack.setColors(colorsBlack);
+    FigureCoefficient figureCoefficientWhite;
+    int colorsWhite [6] = {250, 250, 250, 255, 255, 255}; //czarny
+    figureCoefficientWhite.setColors(colorsWhite);
+    switch (I.channels()) {
+        case 3:
+            cv::Mat_<cv::Vec3b> _R = whiteBoard;
+
+    }
 }
 
 void computeCircumference(FigureCoefficient *figureCoefficient, cv::Mat &I) {
@@ -259,6 +324,36 @@ void computeMoments(FigureCoefficient *figureCoefficient, cv::Mat &I) {
 int main(int, char *[]) {
     std::cout << "Start ..." << std::endl;
 
+    cv::Mat speedLimitSign1 = cv::imread("SourceImages/road112_AgnieszkaJurkiewicz.png");
+    //cv::Mat speedLimitSign1 = cv::imread("SourceImages/road113_AgnieszkaJurkiewicz.png");
+    //cv::Mat speedLimitSign1 = cv::imread("SourceImages/road119_AgnieszkaJurkiewicz.png");
+
+    cv::Mat whiteBoard = makeWhiteBoard(speedLimitSign1);
+
+    FigureCoefficient figureCoefficientRedCircle;
+    int colorsRed [6] = {0, 0, 40, 90, 85, 250}; //czerwony
+    //int colorsRed [6] = {110, 100, 150, 170, 160, 200}; // różowy
+    figureCoefficientRedCircle.setColors(colorsRed);
+
+    FigureCoefficient figureCoefficientWhiteInnerCircle;
+    int colorsWhite [6] = {130, 120, 155, 255, 255, 255};
+    figureCoefficientWhiteInnerCircle.setColors(colorsWhite);
+
+    computeBox(speedLimitSign1, &figureCoefficientRedCircle);
+
+    findNeighborhood(&figureCoefficientRedCircle, &figureCoefficientWhiteInnerCircle, speedLimitSign1, whiteBoard, 4);
+
+
+    //computeField(&figureCoefficientRedCircle, speedLimitSign1);
+
+    //cv::Mat image2 = speedLimitSign1(cv::Rect(figureCoefficientRedCircle.getPixels()[0], figureCoefficientRedCircle.getPixels()[1],
+    //                                          figureCoefficientRedCircle.getPixels()[2] - figureCoefficientRedCircle.getPixels()[0], figureCoefficientRedCircle.getPixels()[3]
+    //                                                                                                                                 - figureCoefficientRedCircle.getPixels()[1]));
+    cv::imshow("Image", speedLimitSign1);
+    cv::imshow("Shape", whiteBoard);
+    cv::waitKey(-1);
+
+
     // zadanie 1
     /*std::string fileNames[5] = {"elipsa", "elipsa1", "kolo", "prost", "troj"};
     for (int i = 0; i < 5; i++) {
@@ -285,17 +380,17 @@ int main(int, char *[]) {
     }*/
 
     //zadanie 2
-    cv::Mat imageArrow1 = cv::imread("SourceImages/strzalki_2.dib");
+    /*cv::Mat imageArrow1 = cv::imread("SourceImages/strzalki_2.dib");
     for (int i = 0; i <= 180; i = i + 45) {
         std::string figureName = "Strzalka R = " + std::to_string(i);
 
         FigureCoefficient figureCoefficient;
-        figureCoefficient.addColor(0,0);
-        figureCoefficient.addColor(180-i,1);
-        figureCoefficient.addColor(i,2);
-        figureCoefficient.addColor(0,0);
-        figureCoefficient.addColor(180-i,1);
-        figureCoefficient.addColor(i,2);
+        figureCoefficient.addColor(3,0);
+        figureCoefficient.addColor(0,1);
+        figureCoefficient.addColor(35,2);
+        figureCoefficient.addColor(40,3);
+        figureCoefficient.addColor(30,4);
+        figureCoefficient.addColor(100,5);
 
 
         computeBox(imageArrow1, &figureCoefficient);
@@ -315,7 +410,7 @@ int main(int, char *[]) {
                                                                                                                    - figureCoefficient.getPixels()[1]));
         cv::imshow("Shape", imageArrow1);
         cv::waitKey(-1);
-    }
+    }*/
 
 
     return 0;

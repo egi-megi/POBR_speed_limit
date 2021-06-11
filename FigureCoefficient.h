@@ -26,6 +26,8 @@ public:
 
     void addColor(int color, int i);
 
+    void setColors(int colors[]);
+
     int getField() const;
 
     void setField(int field);
@@ -53,7 +55,7 @@ public:
 private:
     std::string fileName;
     int pixels[4];
-    int colors[3];
+    int colors[6];
     int field;
     int circumference;
     float W3;
