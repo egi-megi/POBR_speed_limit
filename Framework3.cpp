@@ -92,12 +92,16 @@ void computeBox(cv::Mat &I, FigureCoefficient *figureCoefficient) {
             int coorUpY = y;
             while (!computeConditionForColor(_I, figureCoefficient, x, y) && x < I.rows) {
                 y = 0;
+                ++x;
                 while (!computeConditionForColor(_I, figureCoefficient, x, y) && y < I.cols) {
                     coorUpX = x;
                     coorUpY = y;
                     ++y;
                 }
-                ++x;
+                if (y>=I.cols) {
+                    y=I.cols-1;
+                }
+
             }
 
             x = 0;
@@ -112,8 +116,8 @@ void computeBox(cv::Mat &I, FigureCoefficient *figureCoefficient) {
                     coorRightY = y;
                     ++x;
                 }
-                if (x > 255)
-                    x = 255;
+                if (x >= I.rows)
+                    x = I.rows-1;
             }
 
             x = 0;
@@ -122,27 +126,31 @@ void computeBox(cv::Mat &I, FigureCoefficient *figureCoefficient) {
             int coorLeftY = y;
             while (!computeConditionForColor(_I, figureCoefficient, x, y) && y < I.cols) {
                 ++y;
-                x = I.rows - 1;
+                x = 0;
                 while (!computeConditionForColor(_I, figureCoefficient, x, y) && x < I.rows) {
                     coorLeftX = x;
                     coorLeftY = y;
-                    --x;
+                    ++x;
                 }
-                if (x < 0)
-                    x = 0;
+                if (x==I.rows) {
+                    x=I.rows-1;
+                }
             }
 
             x = I.rows - 1;
             y = I.cols - 1;
             int coorDownX = x;
             int coorDownY = y;
-            while (!computeConditionForColor(_I, figureCoefficient, x, y) && y >= 0) {
+            while (!computeConditionForColor(_I, figureCoefficient, x, y) && x >= 0) {
                 --x;
                 y = I.cols - 1;
-                while (!computeConditionForColor(_I, figureCoefficient, x, y) && x >= 0 ) {
+                while (!computeConditionForColor(_I, figureCoefficient, x, y) && y >= 0 ) {
                     coorDownX = x;
                     coorDownY = y;
                     y--;
+                }
+                if (y<0) {
+                    y=0;
                 }
             }
 
@@ -309,14 +317,84 @@ void edgeDetect(FigureCoefficient *figureCoefficientMain, FigureCoefficient *fig
     }
 }
 
-void frameForSpeedValue(cv::Mat whiteBoard) {
+void frameForSpeedValue(cv::Mat whiteBoard, FigureCoefficient *figureCoefficientMain) {
     FigureCoefficient figureCoefficientFrameForSpeedValue;
     int colorsBlack[6] = {0, 0, 0, 10, 10, 10};
     figureCoefficientFrameForSpeedValue.setColors(colorsBlack);
 
     computeBox(whiteBoard, &figureCoefficientFrameForSpeedValue);
 
-    
+    int width = figureCoefficientFrameForSpeedValue.getCoorMaxY() - figureCoefficientFrameForSpeedValue.getCoorMinY();
+    int hight = figureCoefficientFrameForSpeedValue.getCoorMaxX() - figureCoefficientFrameForSpeedValue.getCoorMinX();
+
+    figureCoefficientMain->setCoorMinY(figureCoefficientFrameForSpeedValue.getCoorMinY() + (int) width/10);
+    figureCoefficientMain->setCoorMaxY(figureCoefficientFrameForSpeedValue.getCoorMaxY() - (int) width/10);
+    figureCoefficientMain->setCoorMinX(figureCoefficientFrameForSpeedValue.getCoorMinX() + (int) hight/6);
+    figureCoefficientMain->setCoorMaxX(figureCoefficientFrameForSpeedValue.getCoorMaxX() - (int) hight/6);
+}
+
+void findPixelsOfSpeedValues(cv::Mat whiteBoard, cv::Mat image, cv::Mat whiteBoardForSpeedValues, FigureCoefficient figureCoefficientMain) {
+
+    frameForSpeedValue(whiteBoard, &figureCoefficientMain);
+
+    CV_Assert(image.depth() != sizeof(uchar));
+    cv::Mat res(image.rows, image.cols, CV_8UC3);
+    switch (image.channels()) {
+        case 3:
+            cv::Mat_<cv::Vec3b> _I = image;
+            cv::Mat_<cv::Vec3b> _R = whiteBoardForSpeedValues;
+            for (int x = figureCoefficientMain.getCoorMinX(); x <= figureCoefficientMain.getCoorMaxX(); ++x) {
+                for (int y = figureCoefficientMain.getCoorMinY(); y <= figureCoefficientMain.getCoorMaxY(); ++y) {
+                    if (computeConditionForColor(_I, &figureCoefficientMain, x, y)) {
+                                    _R(x, y)[0] = 0;
+                                    _R(x, y)[1] = 0;
+                                    _R(x, y)[2] = 0;
+                    }
+                }
+            }
+    }
+}
+
+void findFirstBlackPixel(cv::Mat whiteBoardForSpeedValues, int firstX, int firstY, FigureCoefficient figureCoefficientMain) {
+    bool isBlack = false;
+    CV_Assert(whiteBoardForSpeedValues.depth() != sizeof(uchar));
+    cv::Mat res(whiteBoardForSpeedValues.rows, whiteBoardForSpeedValues.cols, CV_8UC3);
+    switch (whiteBoardForSpeedValues.channels()) {
+        case 3:
+            cv::Mat_<cv::Vec3b> _R = whiteBoardForSpeedValues;
+            int x = figureCoefficientMain.getCoorMaxX();
+            while (x >= figureCoefficientMain.getCoorMinX() || isBlack) {
+                int y = figureCoefficientMain.getCoorMaxY();
+                while (y >= figureCoefficientMain.getCoorMinY() || isBlack) {
+                    if (computeConditionForColor(_R, &figureCoefficientMain, x, y)) {
+                        firstX = x;
+                        firstY = y;
+                        isBlack = true;
+                    }
+                    y--;
+                }
+                x--;
+            }
+    }
+}
+
+void findStartingOfNumbers(cv::Mat whiteBoard, cv::Mat image, cv::Mat whiteBoardForSpeedValues) {
+
+    FigureCoefficient figureCoefficientMain;
+    int colorsBlack [6] = {0, 0, 0, 80, 80, 80};
+    figureCoefficientMain.setColors(colorsBlack);
+    findPixelsOfSpeedValues(whiteBoard, image, whiteBoardForSpeedValues, figureCoefficientMain);
+
+    int firstX = image.rows;
+    int firstY = image.cols;
+    findFirstBlackPixel(whiteBoardForSpeedValues, firstX, firstY, figureCoefficientMain);
+
+    std::vector<std::vector<int>> vecX;
+    std::vector<std::vector<int>> vecY;
+    for (int i = 0; i < 4; i++) {
+        
+    }
+
 }
 
 
@@ -460,13 +538,17 @@ int main(int, char *[]) {
         edgeDetect(&figureCoefficientRedCircle, &figureCoefficientWhiteInnerCircle, image, whiteBoard, 4);
         //cutNoise(whiteBoard, 3);
 
+        cv::Mat whiteBoardForSpeedValues = makeWhiteBoard(image);
+        findPixelsOfSpeedValues(whiteBoard, image, whiteBoardForSpeedValues);
+
         //computeField(&figureCoefficientRedCircle, speedLimitSign1);
 
         //cv::Mat image2 = speedLimitSign1(cv::Rect(figureCoefficientRedCircle.getPixels()[0], figureCoefficientRedCircle.getPixels()[1],
         //                                          figureCoefficientRedCircle.getPixels()[2] - figureCoefficientRedCircle.getPixels()[0], figureCoefficientRedCircle.getPixels()[3]
         //                                                                                                                                 - figureCoefficientRedCircle.getPixels()[1]));
-        cv::imshow("Image" + std::to_string(i), image);
-        cv::imshow("Shape" + std::to_string(i), whiteBoard);
+        //cv::imshow("Image" + std::to_string(i), image);
+        //cv::imshow("Shape" + std::to_string(i), whiteBoard);
+        cv::imshow("Values" + std::to_string(i), whiteBoardForSpeedValues);
         i++;
     }
 
