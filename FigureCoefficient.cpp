@@ -62,14 +62,6 @@ void FigureCoefficient::setFileName(const std::string &fileName) {
     FigureCoefficient::fileName = fileName;
 }
 
-const int *FigureCoefficient::getPixels() const {
-    return pixels;
-}
-
-void FigureCoefficient::addPixel(int pixel, int i) {
-    pixels[i] = pixel;
-}
-
 const int *FigureCoefficient::getColors() const {
     return colors;
 }
@@ -89,4 +81,36 @@ float FigureCoefficient::getAngle() const {
 
 void FigureCoefficient::setAngle(float angle) {
     FigureCoefficient::angle = angle;
+}
+
+int FigureCoefficient::getCoorMinX() const {
+    return coorMinX;
+}
+
+void FigureCoefficient::setCoorMinX(int coorMinX) {
+    FigureCoefficient::coorMinX = coorMinX;
+}
+
+int FigureCoefficient::getCoorMaxX() const {
+    return coorMaxX;
+}
+
+void FigureCoefficient::setCoorMaxX(int coorMaxX) {
+    FigureCoefficient::coorMaxX = coorMaxX;
+}
+
+int FigureCoefficient::getCoorMinY() const {
+    return coorMinY;
+}
+
+void FigureCoefficient::setCoorMinY(int coorMinY) {
+    FigureCoefficient::coorMinY = coorMinY;
+}
+
+int FigureCoefficient::getCoorMaxY() const {
+    return coorMaxY;
+}
+
+void FigureCoefficient::setCoorMaxY(int coorMaxY) {
+    FigureCoefficient::coorMaxY = coorMaxY;
 }

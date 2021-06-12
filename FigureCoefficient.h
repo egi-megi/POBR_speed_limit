@@ -18,10 +18,6 @@ public:
 
     void setFileName(const std::string &fileName);
 
-    const int *getPixels() const;
-
-    void addPixel(int pixel, int i);
-
     const int *getColors() const;
 
     void addColor(int color, int i);
@@ -52,9 +48,28 @@ public:
 
     void setAngle(float angle);
 
+    int getCoorMinX() const;
+
+    void setCoorMinX(int coorMinX);
+
+    int getCoorMaxX() const;
+
+    void setCoorMaxX(int coorMaxX);
+
+    int getCoorMinY() const;
+
+    void setCoorMinY(int coorMinY);
+
+    int getCoorMaxY() const;
+
+    void setCoorMaxY(int coorMaxY);
+
 private:
     std::string fileName;
-    int pixels[4];
+    int coorMinX;
+    int coorMaxX;
+    int coorMinY;
+    int coorMaxY;
     int colors[6];
     int field;
     int circumference;
