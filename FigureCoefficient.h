@@ -64,6 +64,26 @@ public:
 
     void setCoorMaxY(int coorMaxY);
 
+    float getM2() const;
+
+    void setM2(float m2);
+
+    float getM3() const;
+
+    void setM3(float m3);
+
+    float getM4() const;
+
+    void setM4(float m4);
+
+    float getM8() const;
+
+    void setM8(float m8);
+
+    float getM10() const;
+
+    void setM10(float m10);
+
 private:
     std::string fileName;
     int coorMinX;
@@ -75,7 +95,12 @@ private:
     int circumference;
     float W3;
     float M1;
+    float M2;
+    float M3;
+    float M4;
     float M7;
+    float M8;
+    float M10;
     float angle;
 
 };

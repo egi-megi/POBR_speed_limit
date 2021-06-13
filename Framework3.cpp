@@ -160,37 +160,13 @@ void computeBox(cv::Mat &I, FigureCoefficient *figureCoefficient) {
             figureCoefficient->setCoorMinY(coorLeftY);
             figureCoefficient->setCoorMaxX(coorDownX);
             figureCoefficient->setCoorMaxY(coorRightY);
-            std::cout << "coorDownX = " << figureCoefficient->getCoorMinX() << ", coorUpX = " << figureCoefficient->getCoorMaxX()
-                    << ", coorLeftY = " << figureCoefficient->getCoorMinY() << ", coorRightY = " << figureCoefficient->getCoorMaxY()<< std::endl;
-            std::cout << "Width = " << figureCoefficient->getCoorMaxY() - figureCoefficient->getCoorMinY() << "Hight = " << figureCoefficient->getCoorMaxX()
-                                                                                 - figureCoefficient->getCoorMinX() << std::endl;
+            //std::cout << "coorDownX = " << figureCoefficient->getCoorMinX() << ", coorUpX = " << figureCoefficient->getCoorMaxX()
+            //        << ", coorLeftY = " << figureCoefficient->getCoorMinY() << ", coorRightY = " << figureCoefficient->getCoorMaxY()<< std::endl;
+            //std::cout << "Width = " << figureCoefficient->getCoorMaxY() - figureCoefficient->getCoorMinY() << "Hight = " << figureCoefficient->getCoorMaxX()
+            //                                                                     - figureCoefficient->getCoorMinX() << std::endl;
     }
 }
 
-void computeField(FigureCoefficient *figureCoefficient, cv::Mat &I) {
-    int field = 0;
-    //int b = figureCoefficient->getColors()[0];
-    //int g = figureCoefficient->getColors()[1];
-    //int r = figureCoefficient->getColors()[2];
-    CV_Assert(I.depth() != sizeof(uchar));
-    cv::Mat res(I.rows, I.cols, CV_8UC3);
-    switch (I.channels()) {
-        case 3:
-            cv::Mat_<cv::Vec3b> _I = I;
-            for (int j = figureCoefficient->getCoorMinX(); j <= figureCoefficient->getCoorMaxX(); ++j) {
-                for (int i = figureCoefficient->getCoorMinY(); i <= figureCoefficient->getCoorMaxY(); ++i) {
-                    if (computeConditionForColor(_I, figureCoefficient, i, j)) {
-                        field = field + 1;
-                        _I(i, j)[0] = 255;
-                        _I(i, j)[1] = 255;
-                        _I(i, j)[2] = 255;
-                    }
-                }
-            }
-    }
-    figureCoefficient->setField(field);
-    std::cout <<  ": S = " << figureCoefficient->getField();
-}
 
 void findNeighborhood(FigureCoefficient *figureCoefficientMain, cv::Mat whiteBoardForSpeedValues, int firstX, int firstY) {
     std::vector<cv::Point> pixelsToCheck;
@@ -254,34 +230,7 @@ void findNeighborhoodNotDiagonally (FigureCoefficient *figureCoefficientWhiteBoa
     }
 }
 
-void erosion(cv::Mat whiteBoard, FigureCoefficient *figureCoefficientWhiteBoard) {
-    int sizeOfNeighborhood = 1;
-    int r = 100;
-    int g = 1;
-    int b = 100;
 
-    findNeighborhoodNotDiagonally(figureCoefficientWhiteBoard, whiteBoard, sizeOfNeighborhood, r, g, b);
-    FigureCoefficient figureCoefficientNotBlackPoints;
-    int colorsNotBlack [6] = {1, 1, 1, 200, 200, 200};
-    figureCoefficientNotBlackPoints.setColors(colorsNotBlack);
-
-    CV_Assert(whiteBoard.depth() != sizeof(uchar));
-    cv::Mat res(whiteBoard.rows, whiteBoard.cols, CV_8UC3);
-    switch (whiteBoard.channels()) {
-        case 3:
-            cv::Mat_<cv::Vec3b> _R = whiteBoard;
-            for (int x = 0; x <= whiteBoard.cols; ++x) {
-                for (int y = 0; y <= whiteBoard.rows; ++y) {
-                    if (computeConditionForColor(_R, &figureCoefficientNotBlackPoints, x, y)) {
-                            _R(x, y)[0] = 255;
-                            _R(x, y)[1] = 255;
-                            _R(x, y)[2] = 255;
-                    }
-                }
-            }
-    }
-
-}
 
 void edgeDetect(FigureCoefficient *figureCoefficientMain, FigureCoefficient *figureCoefficientNeighbors, cv::Mat &I, cv::Mat whiteBoard, int sizeOfNeighborhood) {
     FigureCoefficient figureCoefficientBlackNumbers;
@@ -470,19 +419,31 @@ void findStartingOfNumbers(cv::Mat whiteBoard, cv::Mat image, cv::Mat whiteBoard
 
 }
 
-
-void cutNoise(cv::Mat whiteBoard, int times) {
-
-    FigureCoefficient figureCoefficientWhiteBoard;
-    int colorsBlack [6] = {0, 0, 0, 200, 200, 200};
-    figureCoefficientWhiteBoard.setColors(colorsBlack);
-    computeBox(whiteBoard, &figureCoefficientWhiteBoard);
-
-    for (int i = 0; i <= times; i++) {
-        erosion(whiteBoard, &figureCoefficientWhiteBoard);
+void computeField(FigureCoefficient *figureCoefficient, cv::Mat &I) {
+    int field = 0;
+    //int b = figureCoefficient->getColors()[0];
+    //int g = figureCoefficient->getColors()[1];
+    //int r = figureCoefficient->getColors()[2];
+    CV_Assert(I.depth() != sizeof(uchar));
+    cv::Mat res(I.rows, I.cols, CV_8UC3);
+    switch (I.channels()) {
+        case 3:
+            cv::Mat_<cv::Vec3b> _I = I;
+            for (int x = figureCoefficient->getCoorMinX(); x <= figureCoefficient->getCoorMaxX(); ++x) {
+                for (int y = figureCoefficient->getCoorMinY(); y <= figureCoefficient->getCoorMaxY(); ++y) {
+                    if (computeConditionForColor(_I, figureCoefficient, x, y)) {
+                        field = field + 1;
+                        //_I(x, y)[0] = 255;
+                        //_I(x, y)[1] = 255;
+                        //_I(x, y)[2] = 255;
+                    }
+                }
+            }
     }
-
+    figureCoefficient->setField(field);
+    //std::cout <<  ": S = " << figureCoefficient->getField();
 }
+
 
 void computeCircumference(FigureCoefficient *figureCoefficient, cv::Mat &I) {
     int circumference = 0;
@@ -494,13 +455,13 @@ void computeCircumference(FigureCoefficient *figureCoefficient, cv::Mat &I) {
     switch (I.channels()) {
         case 3:
             cv::Mat_<cv::Vec3b> _I = I;
-            for (int j = figureCoefficient->getCoorMinX(); j <= figureCoefficient->getCoorMaxX(); ++j) {
-                for (int i = figureCoefficient->getCoorMinY(); i <= figureCoefficient->getCoorMaxY(); ++i) {
-                    if (_I(i, j)[0] <= b && _I(i, j)[1] <= g && _I(i, j)[2] <= r) {
-                        if ((_I(i - 1, j)[0] > b && _I(i - 1, j)[1] > g && _I(i - 1, j)[2] > r) ||
-                            (_I(i, j - 1)[0] > b && _I(i, j - 1)[1] > g && _I(i, j - 1)[2] > r) ||
-                            (_I(i + 1, j)[0] > b && _I(i + 1, j)[1] > g && _I(i + 1, j)[2] > r) ||
-                            (_I(i, j + 1)[0] > b && _I(i, j + 1)[1] > g && _I(i, j + 1)[2] > r)) {
+            for (int x = figureCoefficient->getCoorMinX(); x <= figureCoefficient->getCoorMaxX(); ++x) {
+                for (int y = figureCoefficient->getCoorMinY(); y <= figureCoefficient->getCoorMaxY(); ++y) {
+                    if (_I(x, y)[0] <= b && _I(x, y)[1] <= g && _I(x, y)[2] <= r) {
+                        if ((_I(x - 1, y)[0] > b && _I(x - 1, y)[1] > g && _I(x - 1, y)[2] > r) ||
+                            (_I(x, y - 1)[0] > b && _I(x, y - 1)[1] > g && _I(x, y - 1)[2] > r) ||
+                            (_I(x + 1, y)[0] > b && _I(x + 1, y)[1] > g && _I(x + 1, y)[2] > r) ||
+                            (_I(x, y + 1)[0] > b && _I(x, y + 1)[1] > g && _I(x, y + 1)[2] > r)) {
                             circumference = circumference + 1;
                             //_I(i, j)[1] = 255;
                         }
@@ -509,13 +470,14 @@ void computeCircumference(FigureCoefficient *figureCoefficient, cv::Mat &I) {
             }
     }
     figureCoefficient->setCircumference(circumference);
-    std::cout << ", L = " << figureCoefficient->getCircumference();
+    //std::cout << ", L = " << figureCoefficient->getCircumference();
 }
 
 void computeCoefficientOfMalinowska (FigureCoefficient *figureCoefficient) {
     float coefficientOfMalinowska = (figureCoefficient->getCircumference() / (2 * std::sqrtf(M_PI * figureCoefficient->getField()))) -1;
     figureCoefficient->setW3(coefficientOfMalinowska);
-    std::cout << ", W3 = " << figureCoefficient->getW3();
+    //std::cout << ", W3 = " << figureCoefficient->getW3();
+    std::cout << figureCoefficient->getW3();
 }
 
 void computeAngle(FigureCoefficient *figureCoefficient, double m00, double m01, double m10){
@@ -539,6 +501,10 @@ void computeMoments(FigureCoefficient *figureCoefficient, cv::Mat &I) {
     double m11 = 0;
     double m02 = 0;
     double m20 = 0;
+    double m12 = 0;
+    double m21 = 0;
+    double m03 = 0;
+    double m30 = 0;
 
     int b = figureCoefficient->getColors()[0];
     int g = figureCoefficient->getColors()[1];
@@ -549,32 +515,91 @@ void computeMoments(FigureCoefficient *figureCoefficient, cv::Mat &I) {
     switch (I.channels()) {
         case 3:
             cv::Mat_<cv::Vec3b> _I = I;
-            for (int j = figureCoefficient->getCoorMinX(); j <= figureCoefficient->getCoorMaxX(); ++j) {
-                for (int i = figureCoefficient->getCoorMinY(); i <= figureCoefficient->getCoorMaxY(); ++i) {
-                    if (_I(i, j)[0] == b && _I(i, j)[1] == g && _I(i, j)[2] == r) {
-                        m00 = m00 + pow(i, 0) * pow(j, 0);
-                        m01 = m01 + pow(i, 0) * pow(j, 1);
-                        m10 = m10 + pow(i, 1) * pow(j, 0);
-                        m11 = m11 + pow(i, 1) * pow(j, 1);
-                        m02 = m02 + pow(i, 0) * pow(j, 2);
-                        m20 = m20 + pow(i, 2) * pow(j, 0);
+            for (int x = figureCoefficient->getCoorMinX(); x <= figureCoefficient->getCoorMaxX(); ++x) {
+                for (int y = figureCoefficient->getCoorMinY(); y <= figureCoefficient->getCoorMaxY(); ++y) {
+                    if (_I(x, y)[0] == b && _I(x, y)[1] == g && _I(x, y)[2] == r) {
+                        m00 = m00 + pow(x, 0) * pow(y, 0);
+                        m01 = m01 + pow(x, 0) * pow(y, 1);
+                        m10 = m10 + pow(x, 1) * pow(y, 0);
+                        m11 = m11 + pow(x, 1) * pow(y, 1);
+                        m02 = m02 + pow(x, 0) * pow(y, 2);
+                        m20 = m20 + pow(x, 2) * pow(y, 0);
+                        m12 = m12 + pow(x, 1) * pow(y, 2);
+                        m21 = m21 + pow(x, 2) * pow(y, 1);
+                        m03 = m03 + pow(x, 0) * pow(y, 3);
+                        m30 = m30 + pow(x, 3) * pow(y, 0);
                     }
                 }
             }
     }
 
+    float i = m10/m00;
+    float j = m01/m00;
     float M20 = m20 - (pow(m10, 2))/m00;
     float M02 = m02 - (pow(m01, 2))/m00;
     float M11 = m11 - m10*m01/m00;
+    float M12 = m12 - 2* m11 * j - m02 * i + 2* m10 * pow(j, 2);
+    float M21 = m21 - 2 * m11 * i - m20 * j + 2 * m01 * pow(i, 2);
+    float M30 = m30 - 3 * m20 * i + 2 * m10 * pow(i, 2);
+    float M03 = m03 - 3 * m02 * j + 2 * m01 * pow(j, 2);
 
     float M1 = (M20 + M02)/pow(m00, 2);
+    float M2 = (pow((M20 - M02), 2) + 4  * pow(M11, 2))/pow(m00, 4);
+    float M3 = (pow((M30 - 3 * M12), 2) + pow((3 * M21 - M03), 2))/ pow(m00, 5);
+    float M4 = (pow((M30 + M12), 2) + pow((M21 + M03), 2))/pow(m00, 5);
     float M7 = (M20 * M02 - pow(M11, 2))/pow(m00, 4);
+    float M8 = (M30 * M12 + M21 * M03 - pow(M12, 2) - pow(M21, 2))/pow(m00, 5);
+    float M10 = ((pow((M30 * M03 - M12 * M21), 2)) - 4 * (M30 * M12 - pow(M21, 2)) * (M03 * M21 - M12))/pow(m00, 10);
 
     figureCoefficient->setM1(M1);
+    figureCoefficient->setM2(M2);
+    figureCoefficient->setM3(M3);
+    figureCoefficient->setM4(M4);
     figureCoefficient->setM7(M7);
+    figureCoefficient->setM8(M8);
+    figureCoefficient->setM10(M10);
+}
 
-    computeAngle(figureCoefficient, m00, m01, m10);
+void countCoefficientFoNumbers() {
+    //int amountOfNumbers = 12;
+    //std::string fileNames[12] = {"0a", "0b", "0c", "0d", "0e", "0f", "0g", "0h", "0i", "0j", "0k", "0l"};
+    //int amountOfNumbers = 3;
+    //std::string fileNames[3] = {"1a", "1b", "1c"};
+    //int amountOfNumbers = 8;
+    //std::string fileNames[8] = {"2a", "2b", "2c", "2d", "2e", "2f", "2g", "2h"};
+    int amountOfNumbers = 4;
+     std::string fileNames[4] = {"4a", "4b", "4c", "4d"};
+    //int amountOfNumbers = 4;
+    //std::string fileNames[4] = {"8a", "8b", "8c", "8d"};
 
+    for (int i = 0; i < amountOfNumbers; i++) {
+        FigureCoefficient figureCoefficient;
+        int colorsBlack[6] = {0, 0, 0, 100, 100, 100};
+        figureCoefficient.setColors(colorsBlack);
+        figureCoefficient.setFileName(fileNames[i]);
+        cv::Mat image = cv::imread("SourceImages/Numbers/" + fileNames[i] + ".png");
+
+        computeBox(image, &figureCoefficient);
+
+        //cv::Mat image2 = image(cv::Rect(figureCoefficient.getCoorMinY(), figureCoefficient.getCoorMinX(),
+        //                                figureCoefficient.getCoorMaxY() - figureCoefficient.getCoorMinY(),
+        //                                figureCoefficient.getCoorMaxX()
+        //                                - figureCoefficient.getCoorMinX()));
+        //std::cout << i + 1 << ". Plik " + fileNames[i];
+
+        computeField(&figureCoefficient, image);
+
+        computeCircumference(&figureCoefficient, image);
+        computeCoefficientOfMalinowska(&figureCoefficient);
+
+        computeMoments(&figureCoefficient, image);
+        //std::cout << ", M1 = " << figureCoefficient.getM1() << ", M7 = " << figureCoefficient.getM7() << std::endl;
+        std::cout << ", " << figureCoefficient.getM1() << ", " << figureCoefficient.getM2() << ", " << figureCoefficient.getM3()
+        << ", " << figureCoefficient.getM4() << ", " << figureCoefficient.getM7() << ", " << figureCoefficient.getM8() << ", " << figureCoefficient.getM10()
+        << std::endl;
+        cv::imshow("Shape", image);
+        cv::waitKey(-1);
+    }
 }
 
 
@@ -627,33 +652,7 @@ int main(int, char *[]) {
     }*/
 
 
-    std::string fileNames[4] = {"0a", "0b", "0c", "0d"};
-    for (int i = 0; i < 4; i++) {
-        FigureCoefficient figureCoefficient;
-        int colorsBlack[6] = {0, 0, 0, 100, 100, 100};
-        figureCoefficient.setColors(colorsBlack);
-        figureCoefficient.setFileName(fileNames[i]);
-        cv::Mat image = cv::imread("SourceImages/" + fileNames[i] + ".png");
-
-        computeBox(image, &figureCoefficient);
-
-        //cv::Mat image2 = image(cv::Rect(figureCoefficient.getCoorMinY(), figureCoefficient.getCoorMinX(),
-        //                                figureCoefficient.getCoorMaxY() - figureCoefficient.getCoorMinY(),
-        //                                figureCoefficient.getCoorMaxX()
-        //                                - figureCoefficient.getCoorMinX()));
-        std::cout << i + 1 << ". Plik " + fileNames[i];
-        cv::imshow("Shape", image);
-        computeField(&figureCoefficient, image);
-
-        computeCircumference(&figureCoefficient, image);
-        computeCoefficientOfMalinowska(&figureCoefficient);
-
-        computeMoments(&figureCoefficient, image);
-        std::cout << ", M1 = " << figureCoefficient.getM1() << ", M7 = " << figureCoefficient.getM7() << std::endl;
-
-
-        cv::waitKey(-1);
-    }
+    countCoefficientFoNumbers();
 
 
 

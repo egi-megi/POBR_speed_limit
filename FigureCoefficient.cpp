@@ -46,12 +46,52 @@ void FigureCoefficient::setM1(float m1) {
     M1 = m1;
 }
 
+float FigureCoefficient::getM2() const {
+    return M2;
+}
+
+void FigureCoefficient::setM2(float m2) {
+    M2 = m2;
+}
+
+float FigureCoefficient::getM3() const {
+    return M3;
+}
+
+void FigureCoefficient::setM3(float m3) {
+    M3 = m3;
+}
+
+float FigureCoefficient::getM4() const {
+    return M4;
+}
+
+void FigureCoefficient::setM4(float m4) {
+    M4 = m4;
+}
+
 float FigureCoefficient::getM7() const {
     return M7;
 }
 
 void FigureCoefficient::setM7(float m7) {
     M7 = m7;
+}
+
+float FigureCoefficient::getM8() const {
+    return M8;
+}
+
+void FigureCoefficient::setM8(float m8) {
+    M8 = m8;
+}
+
+float FigureCoefficient::getM10() const {
+    return M10;
+}
+
+void FigureCoefficient::setM10(float m10) {
+    M10 = m10;
 }
 
 const std::string &FigureCoefficient::getFileName() const {
