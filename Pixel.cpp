@@ -13,6 +13,10 @@ Pixel::Pixel() {
 Pixel::Pixel(int coordinateX, int coordinateY, float lightness) : coordinateX(coordinateX), coordinateY(coordinateY),
                                                                   lightness(lightness) {}
 
+Pixel::Pixel(int coordinateX, int coordinateY) : coordinateX(coordinateX), coordinateY(coordinateY) {
+    lightness = 0;
+}
+
 Pixel::~Pixel() {
 
 }

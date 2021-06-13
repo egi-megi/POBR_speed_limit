@@ -14,6 +14,8 @@ public:
 
     Pixel(int coordinateX, int coordinateY, float lightness);
 
+    Pixel(int coordinateX, int coordinateY);
+
     //Pixel (const Pixel &pixel);
 
     virtual ~Pixel();

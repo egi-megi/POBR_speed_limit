@@ -3,6 +3,8 @@
 #include <iostream>
 #include <math.h>
 #include "FigureCoefficient.h"
+#include <vector>
+#include "Pixel.h"
 
 cv::Mat &perform(cv::Mat &I) {
     CV_Assert(I.depth() != sizeof(uchar));
@@ -190,23 +192,27 @@ void computeField(FigureCoefficient *figureCoefficient, cv::Mat &I) {
     std::cout <<  ": S = " << figureCoefficient->getField();
 }
 
-void findNeighborhood(FigureCoefficient *figureCoefficientMain, FigureCoefficient *figureCoefficientNeighbors, cv::Mat &I, cv::Mat whiteBoard, int sizeOfNeighborhood, int r, int g, int b) {
-    CV_Assert(I.depth() != sizeof(uchar));
-    cv::Mat res(I.rows, I.cols, CV_8UC3);
-    switch (I.channels()) {
+void findNeighborhood(FigureCoefficient *figureCoefficientMain, cv::Mat whiteBoardForSpeedValues, int firstX, int firstY) {
+    std::vector<cv::Point> pixelsToCheck;
+    cv::Point pixelFirst(firstX, firstY);
+    pixelsToCheck.push_back(pixelFirst);
+    std::vector<cv::Point> checkedPixels;
+
+    CV_Assert(whiteBoardForSpeedValues.depth() != sizeof(uchar));
+    cv::Mat res(whiteBoardForSpeedValues.rows, whiteBoardForSpeedValues.cols, CV_8UC3);
+    switch (whiteBoardForSpeedValues.channels()) {
         case 3:
-            cv::Mat_<cv::Vec3b> _I = I;
-            cv::Mat_<cv::Vec3b> _R = whiteBoard;
-            for (int x = figureCoefficientMain->getCoorMinX() + sizeOfNeighborhood; x <= figureCoefficientMain->getCoorMaxX() - sizeOfNeighborhood; ++x) {
-                for (int y = figureCoefficientMain->getCoorMinY() + sizeOfNeighborhood; y <= figureCoefficientMain->getCoorMaxY() - sizeOfNeighborhood; ++y) {
-                    if (computeConditionForColor(_I, figureCoefficientMain, x, y)) {
-                        for (int k = x - sizeOfNeighborhood; k <= x + sizeOfNeighborhood; k++) {
-                            for (int l = y - sizeOfNeighborhood; l <= y + sizeOfNeighborhood; l++) {
-                                if (computeConditionForColor(_I, figureCoefficientNeighbors, k, l)) {
-                                    _R(y, x)[0] = b;
-                                    _R(y, x)[1] = g;
-                                    _R(y, x)[2] = r;
-                                }
+            cv::Mat_<cv::Vec3b> _R = whiteBoardForSpeedValues;
+            while (!pixelsToCheck.empty()) {
+                cv::Point pixel = pixelsToCheck.back();
+                pixelsToCheck.pop_back();
+                checkedPixels.push_back(pixel);
+                for (int x = pixel.x - 1; x <= pixel.x + 1; x++) {
+                    for (int y = pixel.y - 1; y <= pixel.y + 1; y++) {
+                        if (computeConditionForColor(_R, figureCoefficientMain, x, y)) {
+                            cv::Point pixelNext(x,y);
+                            if (!std::count(checkedPixels.begin(), checkedPixels.end(), pixelNext)) {
+                                pixelsToCheck.push_back(pixelNext);
                             }
                         }
                     }
@@ -358,14 +364,14 @@ void findPixelsOfSpeedValues(cv::Mat whiteBoard, cv::Mat image, cv::Mat whiteBoa
 void findFirstBlackPixel(cv::Mat whiteBoardForSpeedValues, int firstX, int firstY, FigureCoefficient figureCoefficientMain) {
     bool isBlack = false;
     CV_Assert(whiteBoardForSpeedValues.depth() != sizeof(uchar));
-    cv::Mat res(whiteBoardForSpeedValues.rows, whiteBoardForSpeedValues.cols, CV_8UC3);
+    //cv::Mat res(whiteBoardForSpeedValues.rows, whiteBoardForSpeedValues.cols, CV_8UC3);
     switch (whiteBoardForSpeedValues.channels()) {
         case 3:
             cv::Mat_<cv::Vec3b> _R = whiteBoardForSpeedValues;
-            int x = figureCoefficientMain.getCoorMaxX();
-            while (x >= figureCoefficientMain.getCoorMinX() || isBlack) {
-                int y = figureCoefficientMain.getCoorMaxY();
-                while (y >= figureCoefficientMain.getCoorMinY() || isBlack) {
+            int x = figureCoefficientMain.getCoorMinX();
+            while (x <= figureCoefficientMain.getCoorMaxX() && !isBlack) {
+                int y = figureCoefficientMain.getCoorMinY();
+                while (y <= figureCoefficientMain.getCoorMaxY() && !isBlack) {
                     if (computeConditionForColor(_R, &figureCoefficientMain, x, y)) {
                         firstX = x;
                         firstY = y;
@@ -378,6 +384,36 @@ void findFirstBlackPixel(cv::Mat whiteBoardForSpeedValues, int firstX, int first
     }
 }
 
+void findStartingPointsForAllNumbers(cv::Mat whiteBoardForSpeedValues, int firstX, int firstY, FigureCoefficient figureCoefficientMain,
+        std::vector<std::vector<int>> vecX, std::vector<std::vector<int>> vecY) {
+    bool isBlack = true;
+    std::vector<int> vecXs;
+    std::vector<int> vecYs;
+    CV_Assert(whiteBoardForSpeedValues.depth() != sizeof(uchar));
+    //cv::Mat res(I.rows, I.cols, CV_8UC3);
+    switch (whiteBoardForSpeedValues.channels()) {
+        case 3:
+            cv::Mat_<cv::Vec3b> _wB = whiteBoardForSpeedValues;
+            for (int x = firstX; x < firstX + 4; x++) {
+                vecXs.clear();
+                vecYs.clear();
+                for (int y = firstY; y <= figureCoefficientMain.getCoorMaxY(); y++) {
+                    if (computeConditionForColor(_wB, &figureCoefficientMain, x, y) &&
+                        !isBlack) {
+                        vecXs.push_back(x);
+                        vecYs.push_back(y);
+                        isBlack = true;
+                    }
+                    if (!computeConditionForColor(_wB, &figureCoefficientMain, x, y)) {
+                        isBlack = false;
+                    }
+                }
+                vecX.push_back(vecXs);
+                vecY.push_back(vecYs);
+            }
+    }
+}
+
 void findStartingOfNumbers(cv::Mat whiteBoard, cv::Mat image, cv::Mat whiteBoardForSpeedValues) {
 
     FigureCoefficient figureCoefficientMain;
@@ -385,14 +421,51 @@ void findStartingOfNumbers(cv::Mat whiteBoard, cv::Mat image, cv::Mat whiteBoard
     figureCoefficientMain.setColors(colorsBlack);
     findPixelsOfSpeedValues(whiteBoard, image, whiteBoardForSpeedValues, figureCoefficientMain);
 
-    int firstX = image.rows;
-    int firstY = image.cols;
+    int firstX;
+    int firstY;
     findFirstBlackPixel(whiteBoardForSpeedValues, firstX, firstY, figureCoefficientMain);
 
     std::vector<std::vector<int>> vecX;
     std::vector<std::vector<int>> vecY;
-    for (int i = 0; i < 4; i++) {
-        
+
+    //findStartingPointsForAllNumbers(whiteBoardForSpeedValues, firstX, firstY, figureCoefficientMain, vecX, vecY);
+
+    std::vector<int> vecXs;
+    std::vector<int> vecYs;
+    bool isBlack = true;
+
+    CV_Assert(whiteBoardForSpeedValues.depth() != sizeof(uchar));
+    //cv::Mat res(I.rows, I.cols, CV_8UC3);
+    switch (whiteBoardForSpeedValues.channels()) {
+        case 3:
+            cv::Mat_<cv::Vec3b> _wB = whiteBoardForSpeedValues;
+            for (int x = firstX; x < firstX + 4; x++) {
+                vecXs.clear();
+                vecYs.clear();
+                for (int y = firstY; y <= figureCoefficientMain.getCoorMaxY(); y++) {
+                    if (computeConditionForColor(_wB, &figureCoefficientMain, x, y) &&
+                        !isBlack) {
+                        vecXs.push_back(x);
+                        vecYs.push_back(y);
+                        isBlack = true;
+                    }
+                    if (!computeConditionForColor(_wB, &figureCoefficientMain, x, y)) {
+                        isBlack = false;
+                    }
+                }
+                vecX.push_back(vecXs);
+                vecY.push_back(vecYs);
+            }
+    }
+    vecXs = vecX[0];
+    vecYs = vecY[0];
+    for (int k =1; k < 4; k++) {
+        if (vecX[k].size() > vecXs.size()) {
+            vecXs.clear();
+            vecXs = vecX[k];
+            vecY.clear();
+            vecYs = vecY[k];
+        }
     }
 
 }
@@ -511,7 +584,7 @@ int main(int, char *[]) {
     std::cout << "Start ..." << std::endl;
 
 
-    cv::Mat speedLimitSign1 = cv::imread("SourceImages/road112_AgnieszkaJurkiewicz.png");
+    /*cv::Mat speedLimitSign1 = cv::imread("SourceImages/road112_AgnieszkaJurkiewicz.png");
     cv::Mat speedLimitSign2 = cv::imread("SourceImages/road113_AgnieszkaJurkiewicz.png");
     cv::Mat speedLimitSign3 = cv::imread("SourceImages/road119_AgnieszkaJurkiewicz.png");
     cv::Mat imagesList [3] = {speedLimitSign1, speedLimitSign2, speedLimitSign3};
@@ -539,7 +612,8 @@ int main(int, char *[]) {
         //cutNoise(whiteBoard, 3);
 
         cv::Mat whiteBoardForSpeedValues = makeWhiteBoard(image);
-        findPixelsOfSpeedValues(whiteBoard, image, whiteBoardForSpeedValues);
+        //findPixelsOfSpeedValues(whiteBoard, image, whiteBoardForSpeedValues);
+        findStartingOfNumbers(whiteBoard, image, whiteBoardForSpeedValues);
 
         //computeField(&figureCoefficientRedCircle, speedLimitSign1);
 
@@ -550,68 +624,38 @@ int main(int, char *[]) {
         //cv::imshow("Shape" + std::to_string(i), whiteBoard);
         cv::imshow("Values" + std::to_string(i), whiteBoardForSpeedValues);
         i++;
-    }
-
-    cv::waitKey(-1);
+    }*/
 
 
-    // zadanie 1
-    /*std::string fileNames[5] = {"elipsa", "elipsa1", "kolo", "prost", "troj"};
-    for (int i = 0; i < 5; i++) {
+    std::string fileNames[4] = {"0a", "0b", "0c", "0d"};
+    for (int i = 0; i < 4; i++) {
         FigureCoefficient figureCoefficient;
-        figureCoefficient.addColor(0,0);
-        figureCoefficient.addColor(0,1);
-        figureCoefficient.addColor(0,2);
+        int colorsBlack[6] = {0, 0, 0, 100, 100, 100};
+        figureCoefficient.setColors(colorsBlack);
         figureCoefficient.setFileName(fileNames[i]);
-        cv::Mat image = cv::imread("SourceImages/" +  fileNames[i] + ".dib");
+        cv::Mat image = cv::imread("SourceImages/" + fileNames[i] + ".png");
 
         computeBox(image, &figureCoefficient);
-        cv::Mat image2 = image(cv::Rect(figureCoefficient.getPixels()[0], figureCoefficient.getPixels()[1],
-                figureCoefficient.getPixels()[2] - figureCoefficient.getPixels()[0], figureCoefficient.getPixels()[3]
-                - figureCoefficient.getPixels()[1]));
+
+        //cv::Mat image2 = image(cv::Rect(figureCoefficient.getCoorMinY(), figureCoefficient.getCoorMinX(),
+        //                                figureCoefficient.getCoorMaxY() - figureCoefficient.getCoorMinY(),
+        //                                figureCoefficient.getCoorMaxX()
+        //                                - figureCoefficient.getCoorMinX()));
         std::cout << i + 1 << ". Plik " + fileNames[i];
+        cv::imshow("Shape", image);
         computeField(&figureCoefficient, image);
+
         computeCircumference(&figureCoefficient, image);
         computeCoefficientOfMalinowska(&figureCoefficient);
+
         computeMoments(&figureCoefficient, image);
         std::cout << ", M1 = " << figureCoefficient.getM1() << ", M7 = " << figureCoefficient.getM7() << std::endl;
 
-        cv::imshow("Shape", image);
+
         cv::waitKey(-1);
-    }*/
-
-    //zadanie 2
-    /*cv::Mat imageArrow1 = cv::imread("SourceImages/strzalki_2.dib");
-    for (int i = 0; i <= 180; i = i + 45) {
-        std::string figureName = "Strzalka R = " + std::to_string(i);
-
-        FigureCoefficient figureCoefficient;
-        figureCoefficient.addColor(3,0);
-        figureCoefficient.addColor(0,1);
-        figureCoefficient.addColor(35,2);
-        figureCoefficient.addColor(40,3);
-        figureCoefficient.addColor(30,4);
-        figureCoefficient.addColor(100,5);
+    }
 
 
-        computeBox(imageArrow1, &figureCoefficient);
-        computeMoments(&figureCoefficient, imageArrow1);
-
-
-        std::cout << figureName + ", nachylenie " << figureCoefficient.getAngle();
-        figureCoefficient.setFileName(figureName);
-
-        computeField(&figureCoefficient, imageArrow1);
-        computeCircumference(&figureCoefficient, imageArrow1);
-        computeCoefficientOfMalinowska(&figureCoefficient);
-
-        std::cout << ", M1 = " << figureCoefficient.getM1() << ", M7 = " << figureCoefficient.getM7() << std::endl;
-        cv::Mat image2 = imageArrow1(cv::Rect(figureCoefficient.getPixels()[0], figureCoefficient.getPixels()[1],
-                                              figureCoefficient.getPixels()[2] - figureCoefficient.getPixels()[0], figureCoefficient.getPixels()[3]
-                                                                                                                   - figureCoefficient.getPixels()[1]));
-        cv::imshow("Shape", imageArrow1);
-        cv::waitKey(-1);
-    }*/
 
 
     return 0;
