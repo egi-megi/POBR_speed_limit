@@ -69,15 +69,15 @@ cv::Mat makeWhiteBoard(cv::Mat &I) {
 
 bool computeConditionForColor(cv::Mat_<cv::Vec3b> &_I, FigureCoefficient *figureCoefficient, int x, int y) {
 
-            int b_min = figureCoefficient->getColors()[0];
-            int g_min = figureCoefficient->getColors()[1];
-            int r_min = figureCoefficient->getColors()[2];
-            int b_max = figureCoefficient->getColors()[3];
-            int g_max = figureCoefficient->getColors()[4];
-            int r_max = figureCoefficient->getColors()[5];
+    int b_min = figureCoefficient->getColors()[0];
+    int g_min = figureCoefficient->getColors()[1];
+    int r_min = figureCoefficient->getColors()[2];
+    int b_max = figureCoefficient->getColors()[3];
+    int g_max = figureCoefficient->getColors()[4];
+    int r_max = figureCoefficient->getColors()[5];
 
-            bool condition = (_I(x, y)[0] >= b_min && _I(x, y)[0] <= b_max) &&
-                             (_I(x, y)[1] >= g_min && _I(x, y)[1] <= g_max) && (_I(x, y)[2] >= r_min && _I(x, y)[2] <= r_max);
+    bool condition = (_I(x, y)[0] >= b_min && _I(x, y)[0] <= b_max) &&
+                     (_I(x, y)[1] >= g_min && _I(x, y)[1] <= g_max) && (_I(x, y)[2] >= r_min && _I(x, y)[2] <= r_max);
     return condition;
 }
 
@@ -100,8 +100,8 @@ void computeBox(cv::Mat &I, FigureCoefficient *figureCoefficient) {
                     coorUpY = y;
                     ++y;
                 }
-                if (y>=I.cols) {
-                    y=I.cols-1;
+                if (y >= I.cols) {
+                    y = I.cols - 1;
                 }
 
             }
@@ -119,7 +119,7 @@ void computeBox(cv::Mat &I, FigureCoefficient *figureCoefficient) {
                     ++x;
                 }
                 if (x >= I.rows)
-                    x = I.rows-1;
+                    x = I.rows - 1;
             }
 
             x = 0;
@@ -134,8 +134,8 @@ void computeBox(cv::Mat &I, FigureCoefficient *figureCoefficient) {
                     coorLeftY = y;
                     ++x;
                 }
-                if (x==I.rows) {
-                    x=I.rows-1;
+                if (x == I.rows) {
+                    x = I.rows - 1;
                 }
             }
 
@@ -146,13 +146,13 @@ void computeBox(cv::Mat &I, FigureCoefficient *figureCoefficient) {
             while (!computeConditionForColor(_I, figureCoefficient, x, y) && x >= 0) {
                 --x;
                 y = I.cols - 1;
-                while (!computeConditionForColor(_I, figureCoefficient, x, y) && y >= 0 ) {
+                while (!computeConditionForColor(_I, figureCoefficient, x, y) && y >= 0) {
                     coorDownX = x;
                     coorDownY = y;
                     y--;
                 }
-                if (y<0) {
-                    y=0;
+                if (y < 0) {
+                    y = 0;
                 }
             }
 
@@ -168,14 +168,17 @@ void computeBox(cv::Mat &I, FigureCoefficient *figureCoefficient) {
 }
 
 
-void findNeighborhoodNotDiagonally (FigureCoefficient *figureCoefficientWhiteBoard, cv::Mat whiteBoard, int sizeOfNeighborhood, int r, int g, int b) {
+void findNeighborhoodNotDiagonally(FigureCoefficient *figureCoefficientWhiteBoard, cv::Mat whiteBoard,
+                                   int sizeOfNeighborhood, int r, int g, int b) {
     CV_Assert(whiteBoard.depth() != sizeof(uchar));
     cv::Mat res(whiteBoard.rows, whiteBoard.cols, CV_8UC3);
     switch (whiteBoard.channels()) {
         case 3:
             cv::Mat_<cv::Vec3b> _R = whiteBoard;
-            for (int x = figureCoefficientWhiteBoard->getCoorMinX() + sizeOfNeighborhood; x <= figureCoefficientWhiteBoard->getCoorMaxX() - sizeOfNeighborhood; x++) {
-                for (int y = figureCoefficientWhiteBoard->getCoorMinY() + sizeOfNeighborhood; y <= figureCoefficientWhiteBoard->getCoorMaxY() - sizeOfNeighborhood; y++) {
+            for (int x = figureCoefficientWhiteBoard->getCoorMinX() + sizeOfNeighborhood;
+                 x <= figureCoefficientWhiteBoard->getCoorMaxX() - sizeOfNeighborhood; x++) {
+                for (int y = figureCoefficientWhiteBoard->getCoorMinY() + sizeOfNeighborhood;
+                     y <= figureCoefficientWhiteBoard->getCoorMaxY() - sizeOfNeighborhood; y++) {
                     if (computeConditionForColor(_R, figureCoefficientWhiteBoard, x, y)) {
                         int numberOfNeighbors = 0;
                         if (computeConditionForColor(_R, figureCoefficientWhiteBoard, x - 1, y)) {
@@ -202,8 +205,8 @@ void findNeighborhoodNotDiagonally (FigureCoefficient *figureCoefficientWhiteBoa
 }
 
 
-
-void edgeDetect(FigureCoefficient *figureCoefficientMain, FigureCoefficient *figureCoefficientNeighbors, cv::Mat &I, cv::Mat whiteBoard, int sizeOfNeighborhood) {
+void edgeDetect(FigureCoefficient *figureCoefficientMain, FigureCoefficient *figureCoefficientNeighbors, cv::Mat &I,
+                cv::Mat whiteBoard, int sizeOfNeighborhood) {
     FigureCoefficient figureCoefficientBlackNumbers;
     int colorsBlack[6] = {0, 0, 0, 20, 20, 20};
     figureCoefficientBlackNumbers.setColors(colorsBlack);
@@ -213,10 +216,12 @@ void edgeDetect(FigureCoefficient *figureCoefficientMain, FigureCoefficient *fig
         case 3:
             cv::Mat_<cv::Vec3b> _I = I;
             cv::Mat_<cv::Vec3b> _R = whiteBoard;
-            for (int x = figureCoefficientMain->getCoorMinX() + sizeOfNeighborhood; x <= figureCoefficientMain->getCoorMaxX() - sizeOfNeighborhood; ++x) {
-                for (int y = figureCoefficientMain->getCoorMinY() + sizeOfNeighborhood; y <= figureCoefficientMain->getCoorMaxY() - sizeOfNeighborhood; ++y) {
-                    int cwhite=0;
-                    int cred=0;
+            for (int x = figureCoefficientMain->getCoorMinX() + sizeOfNeighborhood;
+                 x <= figureCoefficientMain->getCoorMaxX() - sizeOfNeighborhood; ++x) {
+                for (int y = figureCoefficientMain->getCoorMinY() + sizeOfNeighborhood;
+                     y <= figureCoefficientMain->getCoorMaxY() - sizeOfNeighborhood; ++y) {
+                    int cwhite = 0;
+                    int cred = 0;
                     int cblack = 0;
                     for (int k = x - sizeOfNeighborhood; k <= x + sizeOfNeighborhood; k++) {
                         for (int l = y - sizeOfNeighborhood; l <= y + sizeOfNeighborhood; l++) {
@@ -231,7 +236,7 @@ void edgeDetect(FigureCoefficient *figureCoefficientMain, FigureCoefficient *fig
                             }
                         }
                         // if (cwhite>sizeOfNeighborhood and cred>sizeOfNeighborhood*sizeOfNeighborhood*2) {
-                        if (cred>25 and (cwhite>20 or cwhite+cblack>20)) {
+                        if (cred > 25 and (cwhite > 20 or cwhite + cblack > 20)) {
                             _R(x, y)[0] = 0;
                             _R(x, y)[1] = 0;
                             _R(x, y)[2] = 0;
@@ -253,13 +258,14 @@ void frameForSpeedValue(cv::Mat whiteBoard, FigureCoefficient *figureCoefficient
     int width = figureCoefficientFrameForSpeedValue.getCoorMaxY() - figureCoefficientFrameForSpeedValue.getCoorMinY();
     int hight = figureCoefficientFrameForSpeedValue.getCoorMaxX() - figureCoefficientFrameForSpeedValue.getCoorMinX();
 
-    figureCoefficientMain->setCoorMinY(figureCoefficientFrameForSpeedValue.getCoorMinY() + (int) width/10);
-    figureCoefficientMain->setCoorMaxY(figureCoefficientFrameForSpeedValue.getCoorMaxY() - (int) width/10);
-    figureCoefficientMain->setCoorMinX(figureCoefficientFrameForSpeedValue.getCoorMinX() + (int) hight/6);
-    figureCoefficientMain->setCoorMaxX(figureCoefficientFrameForSpeedValue.getCoorMaxX() - (int) hight/6);
+    figureCoefficientMain->setCoorMinY(figureCoefficientFrameForSpeedValue.getCoorMinY() + (int) width / 10);
+    figureCoefficientMain->setCoorMaxY(figureCoefficientFrameForSpeedValue.getCoorMaxY() - (int) width / 10);
+    figureCoefficientMain->setCoorMinX(figureCoefficientFrameForSpeedValue.getCoorMinX() + (int) hight / 6);
+    figureCoefficientMain->setCoorMaxX(figureCoefficientFrameForSpeedValue.getCoorMaxX() - (int) hight / 6);
 }
 
-void findPixelsOfSpeedValues(cv::Mat whiteBoard, cv::Mat image, cv::Mat whiteBoardForSpeedValues, FigureCoefficient figureCoefficientMain) {
+void findPixelsOfSpeedValues(cv::Mat whiteBoard, cv::Mat image, cv::Mat whiteBoardForSpeedValues,
+                             FigureCoefficient figureCoefficientMain) {
 
     frameForSpeedValue(whiteBoard, &figureCoefficientMain);
 
@@ -272,16 +278,17 @@ void findPixelsOfSpeedValues(cv::Mat whiteBoard, cv::Mat image, cv::Mat whiteBoa
             for (int x = figureCoefficientMain.getCoorMinX(); x <= figureCoefficientMain.getCoorMaxX(); ++x) {
                 for (int y = figureCoefficientMain.getCoorMinY(); y <= figureCoefficientMain.getCoorMaxY(); ++y) {
                     if (computeConditionForColor(_I, &figureCoefficientMain, x, y)) {
-                                    _R(x, y)[0] = 0;
-                                    _R(x, y)[1] = 0;
-                                    _R(x, y)[2] = 0;
+                        _R(x, y)[0] = 0;
+                        _R(x, y)[1] = 0;
+                        _R(x, y)[2] = 0;
                     }
                 }
             }
     }
 }
 
-void findFirstBlackPixel(cv::Mat whiteBoardForSpeedValues, int *firstX, int *firstY, FigureCoefficient figureCoefficientMain) {
+void findFirstBlackPixel(cv::Mat whiteBoardForSpeedValues, int *firstX, int *firstY,
+                         FigureCoefficient figureCoefficientMain) {
     bool isBlack = false;
     CV_Assert(whiteBoardForSpeedValues.depth() != sizeof(uchar));
     //cv::Mat res(whiteBoardForSpeedValues.rows, whiteBoardForSpeedValues.cols, CV_8UC3);
@@ -304,8 +311,9 @@ void findFirstBlackPixel(cv::Mat whiteBoardForSpeedValues, int *firstX, int *fir
     }
 }
 
-void findStartingPointsForAllNumbers(cv::Mat whiteBoardForSpeedValues, int firstX, int firstY, FigureCoefficient figureCoefficientMain,
-        std::vector<std::vector<int>> vecX, std::vector<std::vector<int>> vecY) {
+void findStartingPointsForAllNumbers(cv::Mat whiteBoardForSpeedValues, int firstX, int firstY,
+                                     FigureCoefficient figureCoefficientMain,
+                                     std::vector<std::vector<int>> vecX, std::vector<std::vector<int>> vecY) {
     bool isBlack = true;
     std::vector<int> vecXs;
     std::vector<int> vecYs;
@@ -334,7 +342,8 @@ void findStartingPointsForAllNumbers(cv::Mat whiteBoardForSpeedValues, int first
     }
 }
 
-void findStartingOfNumbers(FigureCoefficient *figureCoefficientMain, cv::Mat whiteBoard, cv::Mat image, cv::Mat whiteBoardForSpeedValues, std::vector<int> &vecXsr, std::vector<int> &vecYsr) {
+void findStartingOfNumbers(FigureCoefficient *figureCoefficientMain, cv::Mat whiteBoard, cv::Mat image,
+                           cv::Mat whiteBoardForSpeedValues, std::vector<int> &vecXsr, std::vector<int> &vecYsr) {
 
     findPixelsOfSpeedValues(whiteBoard, image, whiteBoardForSpeedValues, *figureCoefficientMain);
 
@@ -369,7 +378,7 @@ void findStartingOfNumbers(FigureCoefficient *figureCoefficientMain, cv::Mat whi
                             vecYs.push_back(y);
                             isBlack = true;
                         }
-                        if ((vecXs.size() > 0) && (y - vecYs.back()  > 3) ) {
+                        if ((vecXs.size() > 0) && (y - vecYs.back() > 3)) {
                             vecXs.push_back(x);
                             vecYs.push_back(y);
                             isBlack = true;
@@ -392,7 +401,7 @@ void findStartingOfNumbers(FigureCoefficient *figureCoefficientMain, cv::Mat whi
     std::cout << "vec 2: " << vecY[1].size() << std::endl;
     std::cout << "vec 2: " << vecY[2].size() << std::endl;
     std::cout << "vec 2: " << vecY[3].size() << std::endl;
-    for (int k =1; k < 4; k++) {
+    for (int k = 1; k < 4; k++) {
         if (vecX[k].size() > vecXsr.size()) {
             vecXsr.clear();
             vecYsr.clear();
@@ -403,7 +412,8 @@ void findStartingOfNumbers(FigureCoefficient *figureCoefficientMain, cv::Mat whi
 }
 
 
-void findNeighborhood(cv::Mat whiteBoard, cv::Mat image, cv::Mat whiteBoardForSpeedValues, int firstX, int firstY, FigureCoefficient figureCoefficientMain, std::vector<cv::Point> &checkedPixels) {
+void findNeighborhood(cv::Mat whiteBoard, cv::Mat image, cv::Mat whiteBoardForSpeedValues, int firstX, int firstY,
+                      FigureCoefficient figureCoefficientMain, std::vector<cv::Point> &checkedPixels) {
 
     std::vector<cv::Point> pixelsToCheck;
     cv::Point pixelFirst(firstX, firstY);
@@ -423,9 +433,9 @@ void findNeighborhood(cv::Mat whiteBoard, cv::Mat image, cv::Mat whiteBoardForSp
                 for (int x = pixel.x - 1; x <= pixel.x + 1; x++) {
                     for (int y = pixel.y - 1; y <= pixel.y + 1; y++) {
                         if (computeConditionForColor(_R, &figureCoefficientMain, x, y)) {
-                            cv::Point pixelNext(x,y);
+                            cv::Point pixelNext(x, y);
                             if (!std::count(checkedPixels.begin(), checkedPixels.end(), pixelNext)) {
-                                if (!std::count(pixelsToCheck.begin(), pixelsToCheck .end(), pixelNext)) {
+                                if (!std::count(pixelsToCheck.begin(), pixelsToCheck.end(), pixelNext)) {
                                     pixelsToCheck.push_back(pixelNext);
                                 }
                             }
@@ -491,8 +501,9 @@ void computeCircumference(FigureCoefficient *figureCoefficient, cv::Mat &I) {
     //std::cout << ", L = " << figureCoefficient->getCircumference();
 }
 
-void computeCoefficientOfMalinowska (FigureCoefficient *figureCoefficient) {
-    float coefficientOfMalinowska = (figureCoefficient->getCircumference() / (2 * std::sqrtf(M_PI * figureCoefficient->getField()))) -1;
+void computeCoefficientOfMalinowska(FigureCoefficient *figureCoefficient) {
+    float coefficientOfMalinowska =
+            (figureCoefficient->getCircumference() / (2 * std::sqrtf(M_PI * figureCoefficient->getField()))) - 1;
     figureCoefficient->setW3(coefficientOfMalinowska);
     //std::cout << ", W3 = " << figureCoefficient->getW3();
     std::cout << figureCoefficient->getW3();
@@ -538,23 +549,23 @@ void computeMomentsToCheckNumbers(FigureCoefficient *figureCoefficient, cv::Mat 
             }
     }
 
-    float i = m10/m00;
-    float j = m01/m00;
-    float M20 = m20 - (pow(m10, 2))/m00;
-    float M02 = m02 - (pow(m01, 2))/m00;
-    float M11 = m11 - m10*m01/m00;
-    float M12 = m12 - 2* m11 * j - m02 * i + 2* m10 * pow(j, 2);
+    float i = m10 / m00;
+    float j = m01 / m00;
+    float M20 = m20 - (pow(m10, 2)) / m00;
+    float M02 = m02 - (pow(m01, 2)) / m00;
+    float M11 = m11 - m10 * m01 / m00;
+    float M12 = m12 - 2 * m11 * j - m02 * i + 2 * m10 * pow(j, 2);
     float M21 = m21 - 2 * m11 * i - m20 * j + 2 * m01 * pow(i, 2);
     float M30 = m30 - 3 * m20 * i + 2 * m10 * pow(i, 2);
     float M03 = m03 - 3 * m02 * j + 2 * m01 * pow(j, 2);
 
-    float M1 = (M20 + M02)/pow(m00, 2);
-    float M2 = (pow((M20 - M02), 2) + 4  * pow(M11, 2))/pow(m00, 4);
-    float M3 = (pow((M30 - 3 * M12), 2) + pow((3 * M21 - M03), 2))/ pow(m00, 5);
-    float M4 = (pow((M30 + M12), 2) + pow((M21 + M03), 2))/pow(m00, 5);
-    float M7 = (M20 * M02 - pow(M11, 2))/pow(m00, 4);
-    float M8 = (M30 * M12 + M21 * M03 - pow(M12, 2) - pow(M21, 2))/pow(m00, 5);
-    float M10 = ((pow((M30 * M03 - M12 * M21), 2)) - 4 * (M30 * M12 - pow(M21, 2)) * (M03 * M21 - M12))/pow(m00, 10);
+    float M1 = (M20 + M02) / pow(m00, 2);
+    float M2 = (pow((M20 - M02), 2) + 4 * pow(M11, 2)) / pow(m00, 4);
+    float M3 = (pow((M30 - 3 * M12), 2) + pow((3 * M21 - M03), 2)) / pow(m00, 5);
+    float M4 = (pow((M30 + M12), 2) + pow((M21 + M03), 2)) / pow(m00, 5);
+    float M7 = (M20 * M02 - pow(M11, 2)) / pow(m00, 4);
+    float M8 = (M30 * M12 + M21 * M03 - pow(M12, 2) - pow(M21, 2)) / pow(m00, 5);
+    float M10 = ((pow((M30 * M03 - M12 * M21), 2)) - 4 * (M30 * M12 - pow(M21, 2)) * (M03 * M21 - M12)) / pow(m00, 10);
 
     figureCoefficient->setM1(M1);
     figureCoefficient->setM2(M2);
@@ -582,9 +593,9 @@ void computeMoments(FigureCoefficient *figureCoefficient, std::vector<cv::Point>
     int g = figureCoefficient->getColors()[1];
     int r = figureCoefficient->getColors()[2];
 
-    for (auto i = checkedPixels.cbegin(); i != checkedPixels.cend(); ++i){
-        int x=i->x;
-        int y=i->y;
+    for (auto i = checkedPixels.cbegin(); i != checkedPixels.cend(); ++i) {
+        int x = i->x;
+        int y = i->y;
 
         m00 = m00 + pow(x, 0) * pow(y, 0);
         m01 = m01 + pow(x, 0) * pow(y, 1);
@@ -599,23 +610,23 @@ void computeMoments(FigureCoefficient *figureCoefficient, std::vector<cv::Point>
     }
 
 
-    float i = m10/m00;
-    float j = m01/m00;
-    float M20 = m20 - (pow(m10, 2))/m00;
-    float M02 = m02 - (pow(m01, 2))/m00;
-    float M11 = m11 - m10*m01/m00;
+    float i = m10 / m00;
+    float j = m01 / m00;
+    float M20 = m20 - (pow(m10, 2)) / m00;
+    float M02 = m02 - (pow(m01, 2)) / m00;
+    float M11 = m11 - m10 * m01 / m00;
     float M12 = m12 - 2 * m11 * j - m02 * i + 2 * m10 * pow(j, 2);
     float M21 = m21 - 2 * m11 * i - m20 * j + 2 * m01 * pow(i, 2);
     float M30 = m30 - 3 * m20 * i + 2 * m10 * pow(i, 2);
     float M03 = m03 - 3 * m02 * j + 2 * m01 * pow(j, 2);
 
-    float M1 = (M20 + M02)/pow(m00, 2);
-    float M2 = (pow((M20 - M02), 2) + 4  * pow(M11, 2))/pow(m00, 4);
-    float M3 = (pow((M30 - 3 * M12), 2) + pow((3 * M21 - M03), 2))/ pow(m00, 5);
-    float M4 = (pow((M30 + M12), 2) + pow((M21 + M03), 2))/pow(m00, 5);
-    float M7 = (M20 * M02 - pow(M11, 2))/pow(m00, 4);
-    float M8 = (M30 * M12 + M21 * M03 - pow(M12, 2) - pow(M21, 2))/pow(m00, 5);
-    float M10 = ((pow((M30 * M03 - M12 * M21), 2)) - 4 * (M30 * M12 - pow(M21, 2)) * (M03 * M21 - M12))/pow(m00, 10);
+    float M1 = (M20 + M02) / pow(m00, 2);
+    float M2 = (pow((M20 - M02), 2) + 4 * pow(M11, 2)) / pow(m00, 4);
+    float M3 = (pow((M30 - 3 * M12), 2) + pow((3 * M21 - M03), 2)) / pow(m00, 5);
+    float M4 = (pow((M30 + M12), 2) + pow((M21 + M03), 2)) / pow(m00, 5);
+    float M7 = (M20 * M02 - pow(M11, 2)) / pow(m00, 4);
+    float M8 = (M30 * M12 + M21 * M03 - pow(M12, 2) - pow(M21, 2)) / pow(m00, 5);
+    float M10 = ((pow((M30 * M03 - M12 * M21), 2)) - 4 * (M30 * M12 - pow(M21, 2)) * (M03 * M21 - M12)) / pow(m00, 10);
 
     figureCoefficient->setM1(M1);
     figureCoefficient->setM2(M2);
@@ -634,7 +645,7 @@ void countCoefficientFoNumbers() {
     //int amountOfNumbers = 8;
     //std::string fileNames[8] = {"2a", "2b", "2c", "2d", "2e", "2f", "2g", "2h"};
     int amountOfNumbers = 4;
-     std::string fileNames[4] = {"4a", "4b", "4c", "4d"};
+    std::string fileNames[4] = {"4a", "4b", "4c", "4d"};
     //int amountOfNumbers = 4;
     //std::string fileNames[4] = {"8a", "8b", "8c", "8d"};
 
@@ -660,22 +671,24 @@ void countCoefficientFoNumbers() {
 
         computeMomentsToCheckNumbers(&figureCoefficient, image);
         //std::cout << ", M1 = " << figureCoefficient.getM1() << ", M7 = " << figureCoefficient.getM7() << std::endl;
-        std::cout << ", " << figureCoefficient.getM1() << ", " << figureCoefficient.getM2() << ", " << figureCoefficient.getM3()
-        << ", " << figureCoefficient.getM4() << ", " << figureCoefficient.getM7() << ", " << figureCoefficient.getM8() << ", " << figureCoefficient.getM10()
-        << std::endl;
+        std::cout << ", " << figureCoefficient.getM1() << ", " << figureCoefficient.getM2() << ", "
+                  << figureCoefficient.getM3()
+                  << ", " << figureCoefficient.getM4() << ", " << figureCoefficient.getM7() << ", "
+                  << figureCoefficient.getM8() << ", " << figureCoefficient.getM10()
+                  << std::endl;
         cv::imshow("Shape", image);
         cv::waitKey(-1);
     }
 }
 
-bool cmp(const cv::Point &a, const cv::Point &b){
-    if (a.x<b.x) {
+bool cmp(const cv::Point &a, const cv::Point &b) {
+    if (a.x < b.x) {
         return true;
     }
-    if (a.x>b.x) {
+    if (a.x > b.x) {
         return false;
     }
-    if (a.y<b.y) {
+    if (a.y < b.y) {
         return true;
     }
     return false;
@@ -685,7 +698,7 @@ void findSpeedLimitSign() {
     cv::Mat speedLimitSign1 = cv::imread("SourceImages/road112_AgnieszkaJurkiewicz.png");
     cv::Mat speedLimitSign2 = cv::imread("SourceImages/road113_AgnieszkaJurkiewicz.png");
     cv::Mat speedLimitSign3 = cv::imread("SourceImages/road119_AgnieszkaJurkiewicz.png");
-    cv::Mat imagesList [3] = {speedLimitSign1, speedLimitSign2, speedLimitSign3};
+    cv::Mat imagesList[3] = {speedLimitSign1, speedLimitSign2, speedLimitSign3};
 
     int i = 1;
     for (cv::Mat image : imagesList) {
@@ -712,7 +725,7 @@ void findSpeedLimitSign() {
         cv::Mat whiteBoardForSpeedValues = makeWhiteBoard(image);
         //findPixelsOfSpeedValues(whiteBoardWithCircle, image, whiteBoardForSpeedValues);
         FigureCoefficient figureCoefficientMain;
-        int colorsBlack [6] = {0, 0, 0, 100,100, 100};
+        int colorsBlack[6] = {0, 0, 0, 100, 100, 100};
         figureCoefficientMain.setColors(colorsBlack);
 
         std::vector<int> vecXs;
@@ -722,7 +735,8 @@ void findSpeedLimitSign() {
         figureCoefficientMain.setCoorMaxX(figureCoefficientRedCircle.getCoorMaxX());
         figureCoefficientMain.setCoorMinX(figureCoefficientRedCircle.getCoorMinX());
 
-        findStartingOfNumbers(&figureCoefficientMain, whiteBoardWithCircle, image, whiteBoardForSpeedValues, vecXs, vecYs);
+        findStartingOfNumbers(&figureCoefficientMain, whiteBoardWithCircle, image, whiteBoardForSpeedValues, vecXs,
+                              vecYs);
         std::vector<std::vector<cv::Point>> points;
         std::vector<std::vector<long>> pointsHash;
         for (int j = 0; j < vecXs.size(); ++j) {
@@ -730,41 +744,99 @@ void findSpeedLimitSign() {
             int firstY = vecYs[j];
             std::vector<cv::Point> checkedPixels;
             std::vector<long> hash;
-            findNeighborhood(whiteBoardWithCircle, image, whiteBoardForSpeedValues, firstX, firstY, figureCoefficientMain, checkedPixels);
+            findNeighborhood(whiteBoardWithCircle, image, whiteBoardForSpeedValues, firstX, firstY,
+                             figureCoefficientMain, checkedPixels);
             for (auto p:checkedPixels) {
-                hash.push_back(p.x*512+p.y);
+                hash.push_back(p.x * 512 + p.y);
             }
 
-            std::sort(hash.begin(),hash.end());
-            if (checkedPixels.size()>8) {
+            std::sort(hash.begin(), hash.end());
+            if (checkedPixels.size() > 8) {
                 points.push_back(checkedPixels);
                 pointsHash.push_back(hash);
             }
         }
 
-        int k=0;
+        int k = 0;
         // intersecty
-        while (k<points.size()-1) {
-            int l=k+1;
-            while (l<points.size()) {
+        while (k < points.size() - 1) {
+            int l = k + 1;
+            while (l < points.size()) {
                 std::vector<long> intersect;
-                std::set_intersection(pointsHash[k].begin(),pointsHash[k].end(),pointsHash[l].begin(),pointsHash[l].end(), std::back_inserter(intersect));
-                if (intersect.size()>0)  {
-                    points.erase(points.begin()+l);
-                    pointsHash.erase(pointsHash.begin()+l);
+                std::set_intersection(pointsHash[k].begin(), pointsHash[k].end(), pointsHash[l].begin(),
+                                      pointsHash[l].end(), std::back_inserter(intersect));
+                if (intersect.size() > 0) {
+                    points.erase(points.begin() + l);
+                    pointsHash.erase(pointsHash.begin() + l);
                 } else {
-                    l=l+1;
+                    l = l + 1;
                 }
             }
-            k=k+1;
+            k = k + 1;
         }
 
         int ii = 0;
-        std::cout<<"Groups num: "<<points.size()<< "\n";
-        for (std::vector<cv::Point> checkedPixels: points) {
+        std::cout << "Groups num: " << points.size() << "\n";
+        if (points.size() == 3) {
+            std::cout << "1";
+            computeMoments(&figureCoefficientMain, points[1]);
+            if (figureCoefficientMain.getM7() < 0.019) {
+                std::cout << "1";
+            }
+            if (figureCoefficientMain.getM2() >= 0.14 && figureCoefficientMain.getM2() < 0.28) {
+                std::cout << "2";
+            }
+            if (figureCoefficientMain.getM10() < 0 && figureCoefficientMain.getM8() > -0.001) {
+                std::cout << "4";
+            }
+            if (figureCoefficientMain.getM8() > 0.001 && figureCoefficientMain.getM1() > 0.4) {
+                std::cout << "8";
+            }
+            if (figureCoefficientMain.getM3() < 0.003 && figureCoefficientMain.getM2() < 0.14) {
+                //if (figureCoefficientMain.getM3() < 0.0067) {
+                std::cout << "0";
+            }
+            std::cout << "0";
+        } else if (points.size() == 2) {
+            computeMoments(&figureCoefficientMain, points[0]);
+            if (figureCoefficientMain.getM7() < 0.019) {
+                std::cout << "1";
+            }
+            if (figureCoefficientMain.getM2() >= 0.14 && figureCoefficientMain.getM2() < 0.28) {
+                std::cout << "2";
+            }
+            //if (figureCoefficientMain.getM10() < 0 && figureCoefficientMain.getM8() > -0.001) {
+            if (figureCoefficientMain.getM10() < 0) {
+                std::cout << "4";
+            }
+            if (figureCoefficientMain.getM8() < 0.001 && figureCoefficientMain.getM1() > 0.4) {
+                std::cout << "8";
+            }
+            std::cout << "0";
+        } else if (points.size() == 1) {
+            computeMoments(&figureCoefficientMain, points[0]);
+            if (figureCoefficientMain.getM7() < 0.019) {
+                std::cout << "1";
+            }
+            if (figureCoefficientMain.getM2() >= 0.14 && figureCoefficientMain.getM2() < 0.28) {
+                std::cout << "2";
+            }
+            if (figureCoefficientMain.getM10() < 0 && figureCoefficientMain.getM8() > -0.001) {
+                std::cout << "4";
+            }
+            //if (figureCoefficientMain.getM8() > 0.001 && figureCoefficientMain.getM1() > 0.57) {
+            if (figureCoefficientMain.getM8() < 0 && figureCoefficientMain.getM1() > 0.4) {
+                std::cout << "8";
+            }
+        } else {
+            std::cout << "Tu nie ma znaku ograniczenia prędkości. ";
+        }
 
 
-            /*int minx=image.rows;
+        /*for (std::vector<cv::Point> checkedPixels: points) {
+
+
+            int minx=image.rows;
             int miny=image.cols;
             for (auto p:checkedPixels) {
                 if (p.x<minx) {
@@ -778,7 +850,7 @@ void findSpeedLimitSign() {
             for (auto &p:checkedPixels) {
                 p.x=p.x-minx;
                 p.y=p.y-miny;
-            }*/
+            }
             computeMoments(&figureCoefficientMain, checkedPixels);
 
             if (checkedPixels.size() > 10) {
@@ -788,7 +860,7 @@ void findSpeedLimitSign() {
                 if (figureCoefficientMain.getM2() >= 0.14 && figureCoefficientMain.getM2() < 0.28) {
                     std::cout << "2";
                 }
-                if (figureCoefficientMain.getM10() < 0 && figureCoefficientMain.getM8() > - 0.001) {
+                if (figureCoefficientMain.getM10() < 0 && figureCoefficientMain.getM8() > -0.001) {
                     std::cout << "4";
                 }
                 //if (figureCoefficientMain.getM8() > 0.001 && figureCoefficientMain.getM1() > 0.57) {
@@ -796,12 +868,10 @@ void findSpeedLimitSign() {
                     std::cout << "8";
                 }
                 if (figureCoefficientMain.getM3() < 0.003 && figureCoefficientMain.getM2() < 0.14) {
-                //if (figureCoefficientMain.getM3() < 0.0067) {
+                    //if (figureCoefficientMain.getM3() < 0.0067) {
                     std::cout << "0";
                 }
             }
-
-
 
 
             CV_Assert(whiteBoardWithCircle.depth() != sizeof(uchar));
@@ -809,13 +879,13 @@ void findSpeedLimitSign() {
                 case 3:
                     cv::Mat_<cv::Vec3b> _I = whiteBoardWithCircle;
                     for (auto p:checkedPixels) {
-                        _I(p.x, p.y)[0] = 100 + ii*20;
-                        _I(p.x, p.y)[1] = 50 + ii*30;
-                        _I(p.x, p.y)[2] = 100 + ii*10;
+                        _I(p.x, p.y)[0] = 100 + ii * 20;
+                        _I(p.x, p.y)[1] = 50 + ii * 30;
+                        _I(p.x, p.y)[2] = 100 + ii * 10;
                     }
             }
             ii = ii + 50;
-        }
+        }*/
         std::cout << "\n";
 
 
