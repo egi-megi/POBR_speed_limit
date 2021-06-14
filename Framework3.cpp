@@ -676,9 +676,9 @@ void displayResult(FigureCoefficient figureCoefficientMain, std::vector<std::vec
     bool one = figureCoefficientMain.getM7() < 0.019;
     bool two = figureCoefficientMain.getM2() >= 0.14 && figureCoefficientMain.getM2() < 0.28;
     bool four = figureCoefficientMain.getM10() < 0 && figureCoefficientMain.getM8() > -0.005 && figureCoefficientMain.getM3() > 0.01;
-    bool eight = figureCoefficientMain.getM8() < 0.001 && figureCoefficientMain.getM1() > 0.3 && figureCoefficientMain.getM10() > -0.001
-                 && figureCoefficientMain.getM3() < 0.01 && figureCoefficientMain.getM2() > 0.28;
-    bool zero = figureCoefficientMain.getM3() < 0.003 && figureCoefficientMain.getM2() < 0.14;
+    bool eight = figureCoefficientMain.getM8() > -0.001 && figureCoefficientMain.getM1() > 0.3 && figureCoefficientMain.getM10() > -0.001
+                 && figureCoefficientMain.getM3() < 0.01 && figureCoefficientMain.getM2() > 0.05 && figureCoefficientMain.getM7() > 0.025;
+    bool zero = figureCoefficientMain.getM3() < 0.003 && figureCoefficientMain.getM2() < 0.05;
     if (points.size() == 3) {
         std::cout << "1";
         if (one) {
