@@ -6,49 +6,6 @@
 #include <vector>
 #include "Pixel.h"
 
-cv::Mat &perform(cv::Mat &I) {
-    CV_Assert(I.depth() != sizeof(uchar));
-    switch (I.channels()) {
-        case 1:
-            for (int i = 0; i < I.rows; ++i)
-                for (int j = 0; j < I.cols; ++j)
-                    I.at<uchar>(i, j) = (I.at<uchar>(i, j) / 32) * 32;
-            break;
-        case 3:
-            cv::Mat_<cv::Vec3b> _I = I;
-            for (int i = 0; i < I.rows; ++i)
-                for (int j = 0; j < I.cols; ++j) {
-                    _I(i, j)[0] = (_I(i, j)[0] / 32) * 32;
-                    _I(i, j)[1] = (_I(i, j)[1] / 32) * 32;
-                    _I(i, j)[2] = (_I(i, j)[2] / 32) * 32;
-                }
-            I = _I;
-            break;
-    }
-    return I;
-}
-
-cv::Mat selectMax(cv::Mat &I) {
-    CV_Assert(I.depth() != sizeof(uchar));
-    cv::Mat res(I.rows, I.cols, CV_8UC3);
-    switch (I.channels()) {
-        case 3:
-            cv::Mat_<cv::Vec3b> _I = I;
-            cv::Mat_<cv::Vec3b> _R = res;
-            for (int i = 0; i < I.rows; ++i)
-                for (int j = 0; j < I.cols; ++j) {
-                    int sel = (_I(i, j)[0] < _I(i, j)[1]) ? 1 : 0;
-                    sel = _I(i, j)[sel] < _I(i, j)[2] ? 2 : sel;
-                    _R(i, j)[0] = sel == 0 ? 255 : 0;
-                    _R(i, j)[1] = sel == 1 ? 255 : 0;
-                    _R(i, j)[2] = sel == 2 ? 255 : 0;
-                }
-            res = _R;
-            break;
-    }
-    return res;
-}
-
 cv::Mat makeWhiteBoard(cv::Mat &I) {
     CV_Assert(I.depth() != sizeof(uchar));
     cv::Mat res(I.rows, I.cols, CV_8UC3);
@@ -637,6 +594,208 @@ void computeMoments(FigureCoefficient *figureCoefficient, std::vector<cv::Point>
     figureCoefficient->setM10(M10);
 }
 
+
+cv::Mat changeColorInRedCircle(cv::Mat image) {
+    CV_Assert(image.depth() != sizeof(uchar));
+    cv::Mat res(image.rows, image.cols, CV_8UC3);
+    switch (image.channels()) {
+        case 3:
+            cv::Mat_<cv::Vec3b> _R = res;
+            cv::Mat_<cv::Vec3b> _I = image;
+            for (int x = 0; x < image.rows; ++x)
+                for (int y = 0; y < image.cols; ++y) {
+                    if (_I(x, y)[0] < 105 && _I(x, y)[0] > 85 && _I(x, y)[1] < 130 && _I(x, y)[1] > 80 && _I(x, y)[2] > 215) {
+                        _R(x, y)[0] = 92;
+                        _R(x, y)[1] = 81;
+                        _R(x, y)[2] = _I(x, y)[2];
+                    } else {
+                        _R(x, y)[0] = _I(x, y)[0];
+                        _R(x, y)[1] = _I(x, y)[1];
+                        _R(x, y)[2] = _I(x, y)[2];
+                    }
+                }
+            res = _R;
+            break;
+    }
+    return res;
+}
+
+
+
+
+void displayResult(FigureCoefficient figureCoefficientMain, std::vector<std::vector<cv::Point>> points) {
+    std::cout << "Groups num: " << points.size() << "\n";
+    if (points.size() == 3) {
+        std::cout << "1";
+        computeMoments(&figureCoefficientMain, points[1]);
+        if (figureCoefficientMain.getM7() < 0.019) {
+            std::cout << "1";
+        }
+        if (figureCoefficientMain.getM2() >= 0.14 && figureCoefficientMain.getM2() < 0.28) {
+            std::cout << "2";
+        }
+        if (figureCoefficientMain.getM10() < 0 && figureCoefficientMain.getM8() > -0.001) {
+            std::cout << "4";
+        }
+        if (figureCoefficientMain.getM8() > 0.001 && figureCoefficientMain.getM1() > 0.4) {
+            std::cout << "8";
+        }
+        if (figureCoefficientMain.getM3() < 0.003 && figureCoefficientMain.getM2() < 0.14) {
+            //if (figureCoefficientMain.getM3() < 0.0067) {
+            std::cout << "0";
+        }
+        std::cout << "0";
+    } else if (points.size() == 2) {
+        computeMoments(&figureCoefficientMain, points[0]);
+        if (figureCoefficientMain.getM7() < 0.019) {
+            std::cout << "1";
+        }
+        if (figureCoefficientMain.getM2() >= 0.14 && figureCoefficientMain.getM2() < 0.28) {
+            std::cout << "2";
+        }
+        if (figureCoefficientMain.getM10() < 0) {
+            std::cout << "4";
+        }
+        if (figureCoefficientMain.getM8() < 0.001 && figureCoefficientMain.getM1() > 0.4) {
+            std::cout << "8";
+        }
+        std::cout << "0";
+    } else if (points.size() == 1) {
+        computeMoments(&figureCoefficientMain, points[0]);
+        if (figureCoefficientMain.getM7() < 0.019) {
+            std::cout << "1";
+        }
+        if (figureCoefficientMain.getM2() >= 0.14 && figureCoefficientMain.getM2() < 0.28) {
+            std::cout << "2";
+        }
+        if (figureCoefficientMain.getM10() < 0 && figureCoefficientMain.getM8() > -0.001) {
+            std::cout << "4";
+        }
+        if (figureCoefficientMain.getM8() < 0 && figureCoefficientMain.getM1() > 0.4) {
+            std::cout << "8";
+        }
+    } else {
+        std::cout << "Tu nie ma znaku ograniczenia prędkości. ";
+    }
+
+
+    std::cout << "\n";
+}
+
+bool cmp(const cv::Point &a, const cv::Point &b) {
+    if (a.x < b.x) {
+        return true;
+    }
+    if (a.x > b.x) {
+        return false;
+    }
+    if (a.y < b.y) {
+        return true;
+    }
+    return false;
+}
+
+void mergingAndCutToSmallGroups( std::vector<std::vector<cv::Point>> &points, cv::Mat whiteBoardWithCircle, cv::Mat image, cv::Mat whiteBoardForSpeedValues,
+                                 FigureCoefficient figureCoefficientMain, std::vector<int> &vecXs, std::vector<int> &vecYs) {
+    std::vector<std::vector<long>> pointsHash;
+    for (int j = 0; j < vecXs.size(); ++j) {
+        int firstX = vecXs[j];
+        int firstY = vecYs[j];
+        std::vector<cv::Point> checkedPixels;
+        std::vector<long> hash;
+        findNeighborhood(whiteBoardWithCircle, image, whiteBoardForSpeedValues, firstX, firstY,
+                         figureCoefficientMain, checkedPixels);
+        for (auto p:checkedPixels) {
+            hash.push_back(p.x * 512 + p.y);
+        }
+
+        std::sort(hash.begin(), hash.end());
+        if (checkedPixels.size() > 8) {
+            points.push_back(checkedPixels);
+            pointsHash.push_back(hash);
+        }
+    }
+
+    int k = 0;
+    // intersecty
+    while (k < points.size() - 1) {
+        int l = k + 1;
+        while (l < points.size()) {
+            std::vector<long> intersect;
+            std::set_intersection(pointsHash[k].begin(), pointsHash[k].end(), pointsHash[l].begin(),
+                                  pointsHash[l].end(), std::back_inserter(intersect));
+            if (intersect.size() > 0) {
+                points.erase(points.begin() + l);
+                pointsHash.erase(pointsHash.begin() + l);
+            } else {
+                l = l + 1;
+            }
+        }
+        k = k + 1;
+    }
+}
+
+void findSpeedLimitSign() {
+    cv::Mat speedLimitSign1 = cv::imread("SourceImages/road112_AgnieszkaJurkiewicz.png");
+    cv::Mat speedLimitSign2 = cv::imread("SourceImages/road113_AgnieszkaJurkiewicz.png");
+    cv::Mat speedLimitSign3 = cv::imread("SourceImages/road119_AgnieszkaJurkiewicz.png");
+    cv::Mat speedLimitSign4 = cv::imread("SourceImages/road734_AgnieszkaJurkiewicz_dwaZnaki.png");
+    cv::Mat imagesList[4] = {speedLimitSign1, speedLimitSign2, speedLimitSign3, speedLimitSign4};
+
+    int i = 1;
+    for (cv::Mat image : imagesList) {
+        cv::Mat whiteBoardWithCircle = makeWhiteBoard(image);
+        cv::Mat clearWhiteBoard = makeWhiteBoard(image);
+
+        FigureCoefficient figureCoefficientRedCircle;
+        int colorsRed[6] = {0, 0, 70, 93, 82, 255}; //czerwony
+        figureCoefficientRedCircle.setColors(colorsRed);
+
+        FigureCoefficient figureCoefficientWhiteInnerCircle;
+        int colorsWhite[6] = {155, 155, 155, 255, 255, 255};
+        figureCoefficientWhiteInnerCircle.setColors(colorsWhite);
+
+        cv::Mat imageMoreRed = changeColorInRedCircle(image);
+
+        //computeBox(image, &figureCoefficientRedCircle);
+        computeBox(imageMoreRed, &figureCoefficientRedCircle);
+
+        //edgeDetect(&figureCoefficientRedCircle, &figureCoefficientWhiteInnerCircle, image, whiteBoardWithCircle, 4);
+        edgeDetect(&figureCoefficientRedCircle, &figureCoefficientWhiteInnerCircle, imageMoreRed, whiteBoardWithCircle, 4);
+
+        cv::Mat whiteBoardForSpeedValues = makeWhiteBoard(image);
+        FigureCoefficient figureCoefficientMain;
+        int colorsBlack[6] = {0, 0, 0, 100, 100, 100};
+        figureCoefficientMain.setColors(colorsBlack);
+
+        std::vector<int> vecXs;
+        std::vector<int> vecYs;
+        figureCoefficientMain.setCoorMaxY(figureCoefficientRedCircle.getCoorMaxY());
+        figureCoefficientMain.setCoorMinY(figureCoefficientRedCircle.getCoorMinY());
+        figureCoefficientMain.setCoorMaxX(figureCoefficientRedCircle.getCoorMaxX());
+        figureCoefficientMain.setCoorMinX(figureCoefficientRedCircle.getCoorMinX());
+
+        findStartingOfNumbers(&figureCoefficientMain, whiteBoardWithCircle, image, whiteBoardForSpeedValues, vecXs,
+                              vecYs);
+        std::vector<std::vector<cv::Point>> points;
+        mergingAndCutToSmallGroups(points, whiteBoardWithCircle, image, whiteBoardForSpeedValues,
+                                         figureCoefficientMain, vecXs, vecYs);
+
+        displayResult(figureCoefficientMain, points);
+        
+
+        //cv::Mat image2 = speedLimitSign1(cv::Rect(figureCoefficientRedCircle.getPixels()[0], figureCoefficientRedCircle.getPixels()[1],
+        //                                          figureCoefficientRedCircle.getPixels()[2] - figureCoefficientRedCircle.getPixels()[0], figureCoefficientRedCircle.getPixels()[3]
+        //                                                                                                                                 - figureCoefficientRedCircle.getPixels()[1]));
+        //cv::imshow("Image" + std::to_string(i), image);
+        cv::imshow("Shape" + std::to_string(i), whiteBoardWithCircle);
+        cv::imshow("Values" + std::to_string(i), whiteBoardForSpeedValues);
+
+        i++;
+    }
+}
+
+
 void countCoefficientFoNumbers() {
     //int amountOfNumbers = 12;
     //std::string fileNames[12] = {"0a", "0b", "0c", "0d", "0e", "0f", "0g", "0h", "0i", "0j", "0k", "0l"};
@@ -681,227 +840,6 @@ void countCoefficientFoNumbers() {
     }
 }
 
-bool cmp(const cv::Point &a, const cv::Point &b) {
-    if (a.x < b.x) {
-        return true;
-    }
-    if (a.x > b.x) {
-        return false;
-    }
-    if (a.y < b.y) {
-        return true;
-    }
-    return false;
-}
-
-void findSpeedLimitSign() {
-    cv::Mat speedLimitSign1 = cv::imread("SourceImages/road112_AgnieszkaJurkiewicz.png");
-    cv::Mat speedLimitSign2 = cv::imread("SourceImages/road113_AgnieszkaJurkiewicz.png");
-    cv::Mat speedLimitSign3 = cv::imread("SourceImages/road119_AgnieszkaJurkiewicz.png");
-    cv::Mat imagesList[3] = {speedLimitSign1, speedLimitSign2, speedLimitSign3};
-
-    int i = 1;
-    for (cv::Mat image : imagesList) {
-        cv::Mat whiteBoardWithCircle = makeWhiteBoard(image);
-        cv::Mat clearWhiteBoard = makeWhiteBoard(image);
-
-        FigureCoefficient figureCoefficientRedCircle;
-        int colorsRed[6] = {0, 0, 70, 93, 82, 255}; //czerwony
-        //int colorsRed [6] = {110, 100, 150, 170, 160, 200}; // różowy
-        //int colorsRed [6] = {0, 0, 40, 20, 20, 250};
-        figureCoefficientRedCircle.setColors(colorsRed);
-
-        FigureCoefficient figureCoefficientWhiteInnerCircle;
-        //int colorsWhite [6] = {130, 120, 155, 255, 255, 255};
-        int colorsWhite[6] = {155, 155, 155, 255, 255, 255};
-        figureCoefficientWhiteInnerCircle.setColors(colorsWhite);
-
-        computeBox(image, &figureCoefficientRedCircle);
-
-        //findNeighborhood(&figureCoefficientRedCircle, &figureCoefficientWhiteInnerCircle, speedLimitSign1, whiteBoardWithCircle, 4, 0, 0, 0);
-        edgeDetect(&figureCoefficientRedCircle, &figureCoefficientWhiteInnerCircle, image, whiteBoardWithCircle, 4);
-        //cutNoise(whiteBoardWithCircle, 3);
-
-        cv::Mat whiteBoardForSpeedValues = makeWhiteBoard(image);
-        //findPixelsOfSpeedValues(whiteBoardWithCircle, image, whiteBoardForSpeedValues);
-        FigureCoefficient figureCoefficientMain;
-        int colorsBlack[6] = {0, 0, 0, 100, 100, 100};
-        figureCoefficientMain.setColors(colorsBlack);
-
-        std::vector<int> vecXs;
-        std::vector<int> vecYs;
-        figureCoefficientMain.setCoorMaxY(figureCoefficientRedCircle.getCoorMaxY());
-        figureCoefficientMain.setCoorMinY(figureCoefficientRedCircle.getCoorMinY());
-        figureCoefficientMain.setCoorMaxX(figureCoefficientRedCircle.getCoorMaxX());
-        figureCoefficientMain.setCoorMinX(figureCoefficientRedCircle.getCoorMinX());
-
-        findStartingOfNumbers(&figureCoefficientMain, whiteBoardWithCircle, image, whiteBoardForSpeedValues, vecXs,
-                              vecYs);
-        std::vector<std::vector<cv::Point>> points;
-        std::vector<std::vector<long>> pointsHash;
-        for (int j = 0; j < vecXs.size(); ++j) {
-            int firstX = vecXs[j];
-            int firstY = vecYs[j];
-            std::vector<cv::Point> checkedPixels;
-            std::vector<long> hash;
-            findNeighborhood(whiteBoardWithCircle, image, whiteBoardForSpeedValues, firstX, firstY,
-                             figureCoefficientMain, checkedPixels);
-            for (auto p:checkedPixels) {
-                hash.push_back(p.x * 512 + p.y);
-            }
-
-            std::sort(hash.begin(), hash.end());
-            if (checkedPixels.size() > 8) {
-                points.push_back(checkedPixels);
-                pointsHash.push_back(hash);
-            }
-        }
-
-        int k = 0;
-        // intersecty
-        while (k < points.size() - 1) {
-            int l = k + 1;
-            while (l < points.size()) {
-                std::vector<long> intersect;
-                std::set_intersection(pointsHash[k].begin(), pointsHash[k].end(), pointsHash[l].begin(),
-                                      pointsHash[l].end(), std::back_inserter(intersect));
-                if (intersect.size() > 0) {
-                    points.erase(points.begin() + l);
-                    pointsHash.erase(pointsHash.begin() + l);
-                } else {
-                    l = l + 1;
-                }
-            }
-            k = k + 1;
-        }
-
-        int ii = 0;
-        std::cout << "Groups num: " << points.size() << "\n";
-        if (points.size() == 3) {
-            std::cout << "1";
-            computeMoments(&figureCoefficientMain, points[1]);
-            if (figureCoefficientMain.getM7() < 0.019) {
-                std::cout << "1";
-            }
-            if (figureCoefficientMain.getM2() >= 0.14 && figureCoefficientMain.getM2() < 0.28) {
-                std::cout << "2";
-            }
-            if (figureCoefficientMain.getM10() < 0 && figureCoefficientMain.getM8() > -0.001) {
-                std::cout << "4";
-            }
-            if (figureCoefficientMain.getM8() > 0.001 && figureCoefficientMain.getM1() > 0.4) {
-                std::cout << "8";
-            }
-            if (figureCoefficientMain.getM3() < 0.003 && figureCoefficientMain.getM2() < 0.14) {
-                //if (figureCoefficientMain.getM3() < 0.0067) {
-                std::cout << "0";
-            }
-            std::cout << "0";
-        } else if (points.size() == 2) {
-            computeMoments(&figureCoefficientMain, points[0]);
-            if (figureCoefficientMain.getM7() < 0.019) {
-                std::cout << "1";
-            }
-            if (figureCoefficientMain.getM2() >= 0.14 && figureCoefficientMain.getM2() < 0.28) {
-                std::cout << "2";
-            }
-            //if (figureCoefficientMain.getM10() < 0 && figureCoefficientMain.getM8() > -0.001) {
-            if (figureCoefficientMain.getM10() < 0) {
-                std::cout << "4";
-            }
-            if (figureCoefficientMain.getM8() < 0.001 && figureCoefficientMain.getM1() > 0.4) {
-                std::cout << "8";
-            }
-            std::cout << "0";
-        } else if (points.size() == 1) {
-            computeMoments(&figureCoefficientMain, points[0]);
-            if (figureCoefficientMain.getM7() < 0.019) {
-                std::cout << "1";
-            }
-            if (figureCoefficientMain.getM2() >= 0.14 && figureCoefficientMain.getM2() < 0.28) {
-                std::cout << "2";
-            }
-            if (figureCoefficientMain.getM10() < 0 && figureCoefficientMain.getM8() > -0.001) {
-                std::cout << "4";
-            }
-            //if (figureCoefficientMain.getM8() > 0.001 && figureCoefficientMain.getM1() > 0.57) {
-            if (figureCoefficientMain.getM8() < 0 && figureCoefficientMain.getM1() > 0.4) {
-                std::cout << "8";
-            }
-        } else {
-            std::cout << "Tu nie ma znaku ograniczenia prędkości. ";
-        }
-
-
-        /*for (std::vector<cv::Point> checkedPixels: points) {
-
-
-            int minx=image.rows;
-            int miny=image.cols;
-            for (auto p:checkedPixels) {
-                if (p.x<minx) {
-                    minx=p.x;
-                }
-                if (p.y<miny) {
-                    miny=p.y;
-                }
-
-            }
-            for (auto &p:checkedPixels) {
-                p.x=p.x-minx;
-                p.y=p.y-miny;
-            }
-            computeMoments(&figureCoefficientMain, checkedPixels);
-
-            if (checkedPixels.size() > 10) {
-                if (figureCoefficientMain.getM7() < 0.019) {
-                    std::cout << "1";
-                }
-                if (figureCoefficientMain.getM2() >= 0.14 && figureCoefficientMain.getM2() < 0.28) {
-                    std::cout << "2";
-                }
-                if (figureCoefficientMain.getM10() < 0 && figureCoefficientMain.getM8() > -0.001) {
-                    std::cout << "4";
-                }
-                //if (figureCoefficientMain.getM8() > 0.001 && figureCoefficientMain.getM1() > 0.57) {
-                if (figureCoefficientMain.getM8() < 0 && figureCoefficientMain.getM1() > 0.4) {
-                    std::cout << "8";
-                }
-                if (figureCoefficientMain.getM3() < 0.003 && figureCoefficientMain.getM2() < 0.14) {
-                    //if (figureCoefficientMain.getM3() < 0.0067) {
-                    std::cout << "0";
-                }
-            }
-
-
-            CV_Assert(whiteBoardWithCircle.depth() != sizeof(uchar));
-            switch (whiteBoardWithCircle.channels()) {
-                case 3:
-                    cv::Mat_<cv::Vec3b> _I = whiteBoardWithCircle;
-                    for (auto p:checkedPixels) {
-                        _I(p.x, p.y)[0] = 100 + ii * 20;
-                        _I(p.x, p.y)[1] = 50 + ii * 30;
-                        _I(p.x, p.y)[2] = 100 + ii * 10;
-                    }
-            }
-            ii = ii + 50;
-        }*/
-        std::cout << "\n";
-
-
-        //computeField(&figureCoefficientRedCircle, speedLimitSign1);
-
-        //cv::Mat image2 = speedLimitSign1(cv::Rect(figureCoefficientRedCircle.getPixels()[0], figureCoefficientRedCircle.getPixels()[1],
-        //                                          figureCoefficientRedCircle.getPixels()[2] - figureCoefficientRedCircle.getPixels()[0], figureCoefficientRedCircle.getPixels()[3]
-        //                                                                                                                                 - figureCoefficientRedCircle.getPixels()[1]));
-        //cv::imshow("Image" + std::to_string(i), image);
-        cv::imshow("Shape" + std::to_string(i), whiteBoardWithCircle);
-        cv::imshow("Values" + std::to_string(i), whiteBoardForSpeedValues);
-
-        i++;
-    }
-}
-
 
 int main(int, char *[]) {
     std::cout << "Start ..." << std::endl;
@@ -914,54 +852,5 @@ int main(int, char *[]) {
 
 
     //countCoefficientFoNumbers();
-
-
-
-
-    /*cv::Mat speedLimitSign1 = cv::imread("SourceImages/road112_AgnieszkaJurkiewicz.png");
-    cv::Mat speedLimitSign2 = cv::imread("SourceImages/road113_AgnieszkaJurkiewicz.png");
-    cv::Mat speedLimitSign3 = cv::imread("SourceImages/road119_AgnieszkaJurkiewicz.png");
-    cv::Mat imagesList [3] = {speedLimitSign1, speedLimitSign2, speedLimitSign3};
-
-    int i = 1;
-    for (cv::Mat image : imagesList) {
-        cv::Mat whiteBoard = makeWhiteBoard(image);
-        cv::Mat clearWhiteBoard = makeWhiteBoard(image);
-
-        FigureCoefficient figureCoefficientRedCircle;
-        int colorsRed[6] = {0, 0, 70, 93, 82, 255}; //czerwony
-        //int colorsRed [6] = {110, 100, 150, 170, 160, 200}; // różowy
-        //int colorsRed [6] = {0, 0, 40, 20, 20, 250};
-        figureCoefficientRedCircle.setColors(colorsRed);
-
-        FigureCoefficient figureCoefficientWhiteInnerCircle;
-        //int colorsWhite [6] = {130, 120, 155, 255, 255, 255};
-        int colorsWhite[6] = {155, 155, 155, 255, 255, 255};
-        figureCoefficientWhiteInnerCircle.setColors(colorsWhite);
-
-        computeBox(image, &figureCoefficientRedCircle);
-
-        //findNeighborhood(&figureCoefficientRedCircle, &figureCoefficientWhiteInnerCircle, speedLimitSign1, whiteBoard, 4, 0, 0, 0);
-        edgeDetect(&figureCoefficientRedCircle, &figureCoefficientWhiteInnerCircle, image, whiteBoard, 4);
-        //cutNoise(whiteBoard, 3);
-
-        cv::Mat whiteBoardForSpeedValues = makeWhiteBoard(image);
-        //findPixelsOfSpeedValues(whiteBoard, image, whiteBoardForSpeedValues);
-        findStartingOfNumbers(whiteBoard, image, whiteBoardForSpeedValues);
-
-        //computeField(&figureCoefficientRedCircle, speedLimitSign1);
-
-        //cv::Mat image2 = speedLimitSign1(cv::Rect(figureCoefficientRedCircle.getPixels()[0], figureCoefficientRedCircle.getPixels()[1],
-        //                                          figureCoefficientRedCircle.getPixels()[2] - figureCoefficientRedCircle.getPixels()[0], figureCoefficientRedCircle.getPixels()[3]
-        //                                                                                                                                 - figureCoefficientRedCircle.getPixels()[1]));
-        //cv::imshow("Image" + std::to_string(i), image);
-        //cv::imshow("Shape" + std::to_string(i), whiteBoard);
-        cv::imshow("Values" + std::to_string(i), whiteBoardForSpeedValues);
-        i++;
-    }*/
-
-
-
-
     return 0;
 }
