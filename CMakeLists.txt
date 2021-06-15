@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.15)
-project(POBRlab1)
+project(TrafficSignRecognizer)
 
 set(CMAKE_CXX_STANDARD 11)
 
@@ -11,5 +11,5 @@ include_directories(${OpenCV_INCLUDE_DIRS})
 set(OpenCV_LIBS opencv_core opencv_imgproc opencv_highgui)
 
 
-add_executable(POBRlab1 Framework3.cpp Pixel.cpp Pixel.h FigureCoefficient.cpp FigureCoefficient.h)
-target_link_libraries(POBRlab1 ${OpenCV_LIBS})
+add_executable(TrafficSignRecognizer TrafficSignRecognizer.cpp FigureCoefficient.cpp FigureCoefficient.h)
+target_link_libraries(TrafficSignRecognizer ${OpenCV_LIBS})
