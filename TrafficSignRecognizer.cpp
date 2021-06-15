@@ -693,15 +693,16 @@ void mergingAndCutToSmallGroups( std::vector<std::vector<cv::Point>> &points, cv
 
 
 void findSpeedLimitSign() {
-    cv::Mat speedLimitSign1 = cv::imread("SourceImages/road112_AgnieszkaJurkiewicz.png");
-    cv::Mat speedLimitSign2 = cv::imread("SourceImages/road113_AgnieszkaJurkiewicz.png");
-    cv::Mat speedLimitSign3 = cv::imread("SourceImages/road119_AgnieszkaJurkiewicz.png");
-    cv::Mat speedLimitSign4 = cv::imread("SourceImages/road734_AgnieszkaJurkiewicz_dwaZnaki.png");
-    cv::Mat imagesList[4] = {speedLimitSign1, speedLimitSign2, speedLimitSign3, speedLimitSign4};
+    std::string files[4] ={
+            "SourceImages/road120_AgnieszkaJurkiewicz.png",
+            "SourceImages/road40_AgnieszkaJurkiewicz.png",
+            "SourceImages/road80_AgnieszkaJurkiewicz.png",
+            "SourceImages/road120_100_AgnieszkaJurkiewicz_dwaZnaki.png"
+    };
 
-    int i = 1;
 
-    for (cv::Mat image : imagesList) {
+    for (auto filename:files) {
+        cv::Mat image=cv::imread(filename);
         int colorChange = 10;
         cv::Mat whiteBoardWithCircle = makeWhiteBoard(image);
         cv::Mat clearWhiteBoard = makeWhiteBoard(image);
@@ -761,12 +762,10 @@ void findSpeedLimitSign() {
             displayResult(figureCoefficientMain, groupOfPointsInCircle, image, colorChange);
             colorChange = colorChange * 20;
 
-                std::cout << "\ncircle"<<i<<"\n";
-
-                //cv::Mat image2 = speedLimitSign1(cv::Rect(figureCoefficientRedCircle.getPixels()[0], figureCoefficientRedCircle.getPixels()[1],
-                //                                          figureCoefficientRedCircle.getPixels()[2] - figureCoefficientRedCircle.getPixels()[0], figureCoefficientRedCircle.getPixels()[3]
-                //                                                                                                                                 - figureCoefficientRedCircle.getPixels()[1]));
-                cv::imshow("Image" + std::to_string(i), image);
+            std::size_t botDirPos = filename.find_last_of("/");
+            std::string file = filename.substr(botDirPos+1 , filename.length());
+                cv::imshow("Result-" + file, image);
+                cv::imwrite("Result-"+file, image);
                 //cv::imshow("Shape" + std::to_string(i), whiteBoardWithCircle);
                 //cv::imshow("Values" + std::to_string(i), whiteBoardForSpeedValues);
                 cv::waitKey(-1);
