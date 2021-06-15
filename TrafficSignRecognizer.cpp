@@ -277,10 +277,10 @@ void findStartingOfNumbers(FigureCoefficient *figureCoefficientMain, cv::Mat whi
     vecXsr.insert(vecXsr.begin(), vecX[0].begin(), vecX[0].end());
     vecYsr.insert(vecYsr.begin(), vecY[0].begin(), vecY[0].end());
 
-    std::cout << "vec 1: " << vecY[0].size() << std::endl;
-    std::cout << "vec 2: " << vecY[1].size() << std::endl;
-    std::cout << "vec 3: " << vecY[2].size() << std::endl;
-    std::cout << "vec 4: " << vecY[3].size() << std::endl;
+    //std::cout << "vec 1: " << vecY[0].size() << std::endl;
+    //std::cout << "vec 2: " << vecY[1].size() << std::endl;
+    //std::cout << "vec 3: " << vecY[2].size() << std::endl;
+    //std::cout << "vec 4: " << vecY[3].size() << std::endl;
     for (int k = 1; k < 14; k++) {
         if (vecX[k].size() > vecXsr.size()) {
             vecXsr.clear();
@@ -569,8 +569,9 @@ cv::Mat changeColorInRedCircle(cv::Mat image) {
 
 
 
-void displayResult(FigureCoefficient figureCoefficientMain, std::vector<std::vector<cv::Point>> points, cv::Mat &I, int colorChange) {
-    std::cout << "Groups num: " << points.size() << "\n";
+void displayResult(FigureCoefficient figureCoefficientMain, std::vector<std::vector<cv::Point>> points, cv::Mat &I, int colorChange, std::string file) {
+    //std::cout << "Groups num: " << points.size() << "\n";
+    std::cout << "Na obrazie <<" + file +  ">> rozpoznano wartość ograniczenia prędkości: ";
 
     if (points.size() == 3) {
         computeMoments(&figureCoefficientMain, points[1]);
@@ -607,6 +608,7 @@ void displayResult(FigureCoefficient figureCoefficientMain, std::vector<std::vec
         cv::rectangle(I, p1, p2,
                   cv::Scalar(255, 0, 0 + colorChange),
                   2, cv::LINE_8);
+        std::cout << "." << std::endl;
     } else if (points.size() == 2) {
         if (one) {
             std::cout << "1";
@@ -626,6 +628,7 @@ void displayResult(FigureCoefficient figureCoefficientMain, std::vector<std::vec
         cv::rectangle(I, p1, p2,
                       cv::Scalar(255, 0, 0 + colorChange),
                       2, cv::LINE_8);
+        std::cout << "." << std::endl;
     } else if (points.size() == 1) {
         if (one) {
             std::cout << "1";
@@ -644,8 +647,10 @@ void displayResult(FigureCoefficient figureCoefficientMain, std::vector<std::vec
         cv::rectangle(I, p1, p2,
                       cv::Scalar(255, 0, 0 + colorChange),
                       2, cv::LINE_8);
+        std::cout << "." << std::endl;
     } else {
         std::cout << "Tu nie ma znaku ograniczenia prędkości. ";
+        std::cout << std::endl;
     }
 
 }
@@ -701,7 +706,11 @@ void findSpeedLimitSign() {
     };
 
 
+
     for (auto filename:files) {
+        std::size_t botDirPos = filename.find_last_of("/");
+        std::string file = filename.substr(botDirPos+1 , filename.length());
+
         cv::Mat image=cv::imread(filename);
         int colorChange = 10;
         cv::Mat whiteBoardWithCircle = makeWhiteBoard(image);
@@ -726,6 +735,7 @@ void findSpeedLimitSign() {
         edgeDetect(&figureCoefficientRedCircle, &figureCoefficientWhiteInnerCircle, imageMoreRed, whiteBoardWithCircle, 5);
 
         std::vector<std::vector<cv::Point>> circles=findCircles(&figureCoefficientMain, whiteBoardWithCircle);
+
         for (std::vector<cv::Point> circle: circles) {
             int minx=10000,miny=10000;
             int maxx=-11,maxy=-1;
@@ -759,11 +769,10 @@ void findSpeedLimitSign() {
             mergingAndCutToSmallGroups(groupOfPointsInCircle, whiteBoardForSpeedValues,
                                        figureCoefficientMain, vecXsCircle, vecYsCircle, minGroupNumber);
 
-            displayResult(figureCoefficientMain, groupOfPointsInCircle, image, colorChange);
+            displayResult(figureCoefficientMain, groupOfPointsInCircle, image, colorChange, file);
             colorChange = colorChange * 20;
 
-            std::size_t botDirPos = filename.find_last_of("/");
-            std::string file = filename.substr(botDirPos+1 , filename.length());
+
                 cv::imshow("Result-" + file, image);
                 cv::imwrite("Result-"+file, image);
                 //cv::imshow("Shape" + std::to_string(i), whiteBoardWithCircle);
