@@ -6,6 +6,8 @@
 #include "FigureCoefficient.h"
 #include <vector>
 
+//Próbny komentarz
+
 cv::Mat makeWhiteBoard(cv::Mat &I) {
     CV_Assert(I.depth() != sizeof(uchar));
     cv::Mat res(I.rows, I.cols, CV_8UC3);
